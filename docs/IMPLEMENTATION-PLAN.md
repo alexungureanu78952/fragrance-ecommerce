@@ -241,9 +241,9 @@ decision log before implementation continues.
 
 | Rubric area | Planned evidence |
 |---|---|
-| 3NF database | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), ERD, migrations, schema review |
+| 3NF database | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), [architecture and database design](ARCHITECTURE-AND-DATABASE.md), migrations, schema review |
 | Four main scenarios | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), end-to-end test report, demonstration script |
-| MVC/Repository architecture | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), source structure, architecture document |
+| MVC/Repository architecture | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), [architecture and database design](ARCHITECTURE-AND-DATABASE.md), source structure |
 | Images, text, tables, links | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), frontend screenshots, component tests |
 | Three classes and one interface | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), backend source, design document |
 | Authentication and authorization | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), security tests, role demonstration |

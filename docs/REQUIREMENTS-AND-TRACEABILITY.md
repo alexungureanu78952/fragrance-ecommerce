@@ -88,15 +88,15 @@ card data is stored by this application.
 
 | Rubric requirement | Owner | Planned phase | Measurable acceptance test | Evidence |
 |---|---|---:|---|---|
-| Database is in 3NF | Data design | 2 | ERD and schema review show atomic attributes, no repeating groups, and dependencies on the complete key | `docs/ERD.*`, migrations, review record |
+| Database is in 3NF | Data design | 2 | ERD and schema review show atomic attributes, no repeating groups, and dependencies on the complete key | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), migrations, review record |
 | Four complete scenarios | Product team | 4–7 | S1–S4 pass their scenario acceptance tests end to end | Test report and demonstration script |
-| MVC/Repository architecture | Backend foundation | 2, 4 | Controllers, services, repositories, domain, security, and configuration have separated responsibilities | Source tree and architecture document |
+| MVC/Repository architecture | Backend foundation | 2, 4 | Controllers, services, repositories, domain, security, and configuration have separated responsibilities | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source tree |
 | Images, text, tables, and links | Frontend | 7 | Catalogue and admin screens render each required content type with semantic markup | Component tests and screenshots |
 | At least three classes | Backend foundation | 4 | Backend contains at least three meaningful domain/service classes used by the application | Source and tests |
-| At least one interface | Payments | 2, 6 | Payment service interface is defined and invoked by the checkout service | API design and unit tests |
-| Authentication | Authentication | 4 | Registration and login tests pass for valid and invalid credentials | Security integration tests |
-| Authorization | Access control | 4 | Customer access to administrator operations returns 403; ownership checks protect customer data | Authorization tests |
-| Inheritance | Domain model | 2, 4 | `User` hierarchy intentionally models `Customer` and `Administrator` and is tested | ERD, source, tests |
+| At least one interface | Payments | 2, 6 | Payment service interface is defined and invoked by the checkout service | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), API design and unit tests |
+| Authentication | Authentication | 4 | Registration and login tests pass for valid and invalid credentials | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), security integration tests |
+| Authorization | Access control | 4 | Customer access to administrator operations returns 403; ownership checks protect customer data | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), authorization tests |
+| Inheritance | Domain model | 2, 4 | `User` hierarchy intentionally models `Customer` and `Administrator` and is tested | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source, tests |
 | Two exception types | Error handling | 4 | At least two domain/application exception types map to structured HTTP errors | Exception tests |
 | Image carousel | Frontend UX | 3, 7 | User can move through product images with buttons and keyboard-accessible controls | Browser test and screenshot |
 | Purposeful animation | Frontend UX | 3, 7 | Documented transition/animation communicates loading, feedback, or navigation state | Browser test and CSS |
