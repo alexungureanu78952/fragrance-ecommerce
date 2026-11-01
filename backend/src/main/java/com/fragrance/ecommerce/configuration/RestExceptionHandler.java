@@ -24,6 +24,11 @@ public class RestExceptionHandler {
         return problem(HttpStatus.NOT_FOUND, "Not found", exception.getMessage(), request);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    ProblemDetail badRequest(IllegalArgumentException exception, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "Invalid request", exception.getMessage(), request);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ProblemDetail validation(MethodArgumentNotValidException exception, HttpServletRequest request) {
         var detail = problem(HttpStatus.BAD_REQUEST, "Validation failed",

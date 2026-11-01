@@ -25,8 +25,15 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Product> list(Pageable pageable) {
-        return products.findByActiveTrue(pageable);
+    public Page<Product> list(String search, UUID brandId, UUID categoryId, Pageable pageable) {
+        return products.searchActive(normalizeSearch(search), brandId, categoryId, pageable);
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null || search.isBlank()) {
+            return null;
+        }
+        return search.trim();
     }
 
     @Transactional(readOnly = true)

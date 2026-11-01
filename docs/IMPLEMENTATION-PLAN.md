@@ -155,11 +155,13 @@ decision log before implementation continues.
 
 **Current implementation progress**
 
-- Product, brand, category schema; public active-product pagination/details; admin
-  create/update/soft-delete; service validation; and product business-rule tests
-  are implemented.
-- Image metadata, upload restrictions, search/filter/sort, and catalogue frontend
-  remain to be completed.
+- Product, brand, category schema; public active-product pagination/details; search,
+  filters, allow-listed sorting, reference data, admin create/update/soft-delete;
+  and product business-rule tests are implemented.
+- Product image metadata, 12 MB and extension/MIME restrictions, decoded-image
+  validation, safe generated filenames, content hashing, deletion, and upload
+  business-rule tests are implemented.
+- Catalogue/admin frontend screens remain to be completed.
 
 **Exit gate**
 
