@@ -249,6 +249,10 @@ decision log before implementation continues.
 - Added CSP, frame, referrer, and permissions security headers through Spring
   Security. CAPTCHA, upload metadata hardening, deployment-boundary evidence, and
   Security Headers Inspector verification remain.
+- Added a provider boundary for CAPTCHA verification on registration and login,
+  with external secret configuration and explicit failure responses when enabled.
+- Added an Apache `.htaccess` policy for static hosting to deny directory listing,
+  dotfiles, environment files, logs, SQL, and configuration resources.
 
 **Exit gate**
 

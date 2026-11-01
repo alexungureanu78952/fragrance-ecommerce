@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.fragrance.ecommerce.security.CaptchaVerifier;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -27,20 +29,31 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final AuditLogService auditLogService;
+    private final CaptchaVerifier captchaVerifier;
 
+    @Autowired
     public AuthController(AuthService authService, AuthenticationManager authenticationManager,
                           SecurityContextRepository securityContextRepository,
-                          AuditLogService auditLogService) {
+                          AuditLogService auditLogService, CaptchaVerifier captchaVerifier) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
         this.auditLogService = auditLogService;
+        this.captchaVerifier = captchaVerifier;
+    }
+
+    public AuthController(AuthService authService, AuthenticationManager authenticationManager,
+                          SecurityContextRepository securityContextRepository,
+                          AuditLogService auditLogService) {
+        this(authService, authenticationManager, securityContextRepository, auditLogService,
+            token -> {});
     }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public AuthDtos.UserResponse register(@Valid @RequestBody AuthDtos.RegisterRequest request,
                                           HttpServletRequest servletRequest) {
+        captchaVerifier.verify(request.captchaToken());
         var user = authService.register(request);
         auditLogService.record(user.getId(), "REGISTER", "USER", user.getId().toString(),
             "SUCCESS", servletRequest.getHeader("X-Request-ID"));
@@ -51,6 +64,7 @@ public class AuthController {
     public AuthDtos.UserResponse login(@Valid @RequestBody AuthDtos.LoginRequest request,
                                        HttpServletRequest servletRequest,
                                        HttpServletResponse servletResponse) {
+        captchaVerifier.verify(request.captchaToken());
         var authentication = authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
         var context = SecurityContextHolder.createEmptyContext();

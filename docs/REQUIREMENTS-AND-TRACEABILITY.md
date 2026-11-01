@@ -115,10 +115,10 @@ card data is stored by this application.
 | Upload size limit | Security I | 5, 8 | Files over 12 MB are rejected before persistence | `ProductImageServiceTest`, upload test |
 | Approved upload extensions/MIME | Security I | 5, 8 | Non-approved extensions or MIME types are rejected | `ProductImageServiceTest`, upload test |
 | Rate limiting | Security II | 8 | More than 100 consecutive requests in under one minute are temporarily blocked | `RateLimitFilterTest`, HTTP 429 response |
-| CAPTCHA | Security II | 8 | Abuse-prone flow requires a valid CAPTCHA result | Authentication/checkout test |
+| CAPTCHA | Security II | 8 | Registration and login call the configured CAPTCHA verifier and reject missing/invalid results when enabled | `CaptchaVerifier`, authentication tests; live provider evidence pending |
 | Steganography risk reduction | Security II | 8 | Uploaded files undergo content decoding, metadata capture, and content hashing beyond filename validation | `ProductImageService`, upload security test |
 | Security headers | Security II | 8, 10 | CSP, frame, referrer, and permissions headers are emitted; Inspector grade remains to be captured | `SecurityConfig`, captured inspector report pending |
-| `.htaccess` resource protection | Security II | 8, 10 | Private/configuration resources are inaccessible through the deployed web boundary | Deployment smoke test and configuration |
+| `.htaccess` resource protection | Security II | 8, 10 | Static hosting policy denies directory listing, dotfiles, logs, SQL, and configuration resources | `frontend/public/.htaccess`, deployment smoke test pending |
 
 ## Phase 1 exit-gate checklist
 
