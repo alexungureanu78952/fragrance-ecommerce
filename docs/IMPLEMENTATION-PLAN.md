@@ -241,23 +241,23 @@ decision log before implementation continues.
 
 | Rubric area | Planned evidence |
 |---|---|
-| 3NF database | ERD, migrations, schema review |
-| Four main scenarios | End-to-end test report and demonstration script |
-| MVC/Repository architecture | Source structure and architecture diagram |
-| Images, text, tables, links | Frontend screenshots and component tests |
-| Three classes and one interface | Backend source and design document |
-| Authentication and authorization | Security tests and role demonstration |
-| Inheritance | `User` hierarchy and tests |
-| Two exception types | Exception classes, handlers, and tests |
-| Carousel and animation | Browser test and screenshots |
-| CSS and responsive design | CSS files and viewport test evidence |
-| Five unit tests | CI test report |
-| Git and GitHub Actions | Repository history and workflow run |
-| Logging | Log file and documented event examples |
-| Hosting | Public URL |
-| SEO 90+ | Lighthouse report |
-| Stripe test payment | Test-mode checkout evidence |
-| Security levels I and II | Security test report and tool reports |
+| 3NF database | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), ERD, migrations, schema review |
+| Four main scenarios | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), end-to-end test report, demonstration script |
+| MVC/Repository architecture | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), source structure, architecture document |
+| Images, text, tables, links | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), frontend screenshots, component tests |
+| Three classes and one interface | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), backend source, design document |
+| Authentication and authorization | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), security tests, role demonstration |
+| Inheritance | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), `User` hierarchy, tests |
+| Two exception types | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), exception classes, handlers, tests |
+| Carousel and animation | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), browser test, screenshots |
+| CSS and responsive design | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), CSS files, viewport test evidence |
+| Five unit tests | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), CI test report |
+| Git and GitHub Actions | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), repository history, workflow run |
+| Logging | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), log file, documented event examples |
+| Hosting | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), public URL |
+| SEO 90+ | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), Lighthouse report |
+| Stripe test payment | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), test-mode checkout evidence |
+| Security levels I and II | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), security test report, tool reports |
 
 ## 6. Definition of done
 
