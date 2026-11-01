@@ -94,8 +94,8 @@ card data is stored by this application.
 | Images, text, tables, and links | Frontend | 7 | Catalogue and admin screens render each required content type with semantic markup | Component tests and screenshots |
 | At least three classes | Backend foundation | 4 | Backend contains at least three meaningful domain/service classes used by the application | Source and tests |
 | At least one interface | Payments | 2, 6 | Payment service interface is defined and invoked by the checkout service | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), API design and unit tests |
-| Authentication | Authentication | 4 | Registration and login tests pass for valid and invalid credentials | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), `AuthServiceTest`, security integration tests |
-| Authorization | Access control | 4 | Customer access to administrator operations returns 403; ownership checks protect customer data | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), authorization tests |
+| Authentication | Authentication | 4 | Registration and login tests pass for valid and invalid credentials | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), `AuthServiceTest`, `AuthControllerIntegrationTest` |
+| Authorization | Access control | 4 | Customer access to administrator operations returns 403; ownership checks protect customer data | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), `AuthControllerIntegrationTest`, authorization tests |
 | Inheritance | Domain model | 2, 4 | `User` hierarchy intentionally models `Customer` and `Administrator` and is tested | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source, tests |
 | Two exception types | Error handling | 4 | At least two domain/application exception types map to structured HTTP errors | Exception tests |
 | Image carousel | Frontend UX | 3, 7 | User can move through product images with buttons and keyboard-accessible controls | [UX and visual design](UX-AND-VISUAL-DESIGN.md), browser test and screenshot |
@@ -105,7 +105,7 @@ card data is stored by this application.
 | Five unit tests | Testing | 9 | CI reports at least five meaningful business-rule unit tests | CI test report |
 | Git versioning | Delivery | 0 | Repository has history with coherent commits | GitHub repository |
 | GitHub Actions CI/CD | Delivery | 0, 9 | Push and pull request workflow installs, lints/tests, and builds successfully | Workflow run |
-| User activity logging | Operations | 4, 8, 10 | Authentication and administrative actions are written to a retrievable log without secrets | Log configuration and sample |
+| User activity logging | Operations | 4, 8, 10 | Authentication actions are persisted and written to a structured application log without secrets; administrative actions are added with admin CRUD | `AuditLogService`, log configuration and sample |
 | Hosting | Deployment | 10 | Public URL serves the application | Deployment URL and smoke test |
 | SEO | SEO | 10 | Lighthouse SEO score is at least 90/100 and required metadata is present | Lighthouse report |
 | Stripe payments | Payments | 6 | Stripe test-mode checkout completes and records only provider ID/status | Integration test and demonstration |

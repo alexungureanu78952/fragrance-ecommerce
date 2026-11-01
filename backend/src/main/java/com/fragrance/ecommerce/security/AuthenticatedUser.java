@@ -7,7 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-public record AuthenticatedUser(UUID id, String email, String passwordHash, boolean enabled,
+public record AuthenticatedUser(UUID id, String email, String passwordHash, String displayName, boolean enabled,
                                 Collection<? extends GrantedAuthority> authorities)
         implements UserDetails {
 
@@ -16,6 +16,7 @@ public record AuthenticatedUser(UUID id, String email, String passwordHash, bool
             user.getId(),
             user.getEmail(),
             user.getPasswordHash(),
+            user.getDisplayName(),
             user.isEnabled(),
             user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getCode()))

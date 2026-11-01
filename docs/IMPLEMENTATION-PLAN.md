@@ -132,8 +132,10 @@ decision log before implementation continues.
   inheritance, password hashing, HttpOnly session authentication, CSRF token
   issuance, role authorization wiring, DTO validation, and problem responses are
   implemented in the backend.
-- Catalogue, administrative product endpoints, audit persistence, and full
-  authorization integration tests remain part of the Phase 4/5 completion work.
+- Catalogue and administrative product endpoints remain part of Phase 5. Authentication
+  audit persistence, CSRF enforcement, and customer-versus-administrator authorization
+  integration tests are now covered; administrative audit events will be added with
+  product/order operations.
 
 **Exit gate**
 
