@@ -249,8 +249,8 @@ decision log before implementation continues.
 | Authentication and authorization | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), security tests, role demonstration |
 | Inheritance | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), `User` hierarchy, tests |
 | Two exception types | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), exception classes, handlers, tests |
-| Carousel and animation | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), browser test, screenshots |
-| CSS and responsive design | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), CSS files, viewport test evidence |
+| Carousel and animation | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), [UX and visual design](UX-AND-VISUAL-DESIGN.md), browser test, screenshots |
+| CSS and responsive design | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), [UX and visual design](UX-AND-VISUAL-DESIGN.md), CSS files, viewport test evidence |
 | Five unit tests | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), CI test report |
 | Git and GitHub Actions | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), repository history, workflow run |
 | Logging | [Requirements and traceability](REQUIREMENTS-AND-TRACEABILITY.md), log file, documented event examples |
