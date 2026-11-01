@@ -98,10 +98,10 @@ card data is stored by this application.
 | Authorization | Access control | 4 | Customer access to administrator operations returns 403; ownership checks protect customer data | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), `AuthControllerIntegrationTest`, authorization tests |
 | Inheritance | Domain model | 2, 4 | `User` hierarchy intentionally models `Customer` and `Administrator` and is tested | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source, tests |
 | Two exception types | Error handling | 4 | At least two domain/application exception types map to structured HTTP errors | Exception tests |
-| Image carousel | Frontend UX | 3, 7 | User can move through product images with buttons and keyboard-accessible controls | [UX and visual design](UX-AND-VISUAL-DESIGN.md), browser test and screenshot |
-| Purposeful animation | Frontend UX | 3, 7 | Documented transition/animation communicates loading, feedback, or navigation state | [UX and visual design](UX-AND-VISUAL-DESIGN.md), browser test and CSS |
-| Two CSS files and 10 properties | Frontend styling | 7 | At least two organized CSS files and ten distinct CSS properties are present | [UX and visual design](UX-AND-VISUAL-DESIGN.md), source inspection and build |
-| Responsive design | Frontend styling | 3, 7 | Required screens work at desktop, tablet, and mobile viewport sizes | [UX and visual design](UX-AND-VISUAL-DESIGN.md), viewport test evidence |
+| Image carousel | Frontend UX | 3, 7 | Product detail view provides button-controlled, keyboard-accessible image states | [UX and visual design](UX-AND-VISUAL-DESIGN.md), `ProductVisual`, browser evidence pending |
+| Purposeful animation | Frontend UX | 3, 7 | Loading pulse and carousel transitions communicate state and respect reduced motion | [UX and visual design](UX-AND-VISUAL-DESIGN.md), CSS, browser evidence pending |
+| Two CSS files and 10 properties | Frontend styling | 7 | Organized `index.css` and `App.css` provide the responsive visual system | [UX and visual design](UX-AND-VISUAL-DESIGN.md), source inspection and build |
+| Responsive design | Frontend styling | 3, 7 | Catalogue, details, cart, and auth layouts include mobile/tablet breakpoints | [UX and visual design](UX-AND-VISUAL-DESIGN.md), viewport evidence pending |
 | Five unit tests | Testing | 9 | CI reports at least five meaningful business-rule unit tests | CI test report |
 | Git versioning | Delivery | 0 | Repository has history with coherent commits | GitHub repository |
 | GitHub Actions CI/CD | Delivery | 0, 9 | Push and pull request workflow installs, lints/tests, and builds successfully | Workflow run |

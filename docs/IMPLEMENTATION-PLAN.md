@@ -207,6 +207,16 @@ decision log before implementation continues.
 - Implement at least two organized CSS files and responsive layouts.
 - Add semantic HTML, keyboard navigation, accessible labels, and image alt text.
 
+**Current implementation progress**
+
+- Replaced the Vite starter screen with a responsive catalogue, product details,
+  cart, authentication, and account shell.
+- Added typed API access for catalogue, session, authentication, and cart flows.
+- Added loading, empty, error, and unauthorized states, keyboard-accessible carousel
+  controls, reduced-motion support, responsive CSS, and initial SEO metadata,
+  `robots.txt`, and `sitemap.xml`.
+- Checkout payment-result, admin screens, frontend tests, and browser evidence remain.
+
 **Exit gate**
 
 - All four minimum scenarios work through the frontend on desktop, tablet, and
