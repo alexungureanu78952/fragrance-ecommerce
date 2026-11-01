@@ -242,6 +242,14 @@ decision log before implementation continues.
 - Protect configuration, logs, build files, and private resources at the proxy/server
   boundary. Include `.htaccess` rules if required by the evaluator.
 
+**Current implementation progress**
+
+- Added configurable per-client rate limiting with a 100-request, 60-second
+  default window and explicit HTTP 429 responses.
+- Added CSP, frame, referrer, and permissions security headers through Spring
+  Security. CAPTCHA, upload metadata hardening, deployment-boundary evidence, and
+  Security Headers Inspector verification remain.
+
 **Exit gate**
 
 - Each of the ten security criteria has a test or captured verification evidence.

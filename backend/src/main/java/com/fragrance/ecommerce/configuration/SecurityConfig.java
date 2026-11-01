@@ -14,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
@@ -56,6 +57,15 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/webhooks/stripe"))
+            .headers(headers -> headers
+                .contentSecurityPolicy(policy -> policy.policyDirectives(
+                    "default-src 'self'; connect-src 'self' http://localhost:8080; " +
+                    "img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                    "font-src 'self' https://fonts.gstatic.com; object-src 'none'; frame-ancestors 'none'"))
+                .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+                .referrerPolicy(referrer -> referrer.policy(
+                    org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                .permissionsPolicy(permissions -> permissions.policy("camera=(), microphone=(), geolocation=()")))
             .securityContext(context -> context.securityContextRepository(contextRepository))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(authorize -> authorize

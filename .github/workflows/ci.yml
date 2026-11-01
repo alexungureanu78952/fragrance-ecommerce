@@ -33,6 +33,8 @@ jobs:
         working-directory: backend
         env:
           SPRING_DATASOURCE_PASSWORD: ci-password
+          RATE_LIMIT_MAX_REQUESTS: 100
+          RATE_LIMIT_WINDOW_SECONDS: 60
         run: |
           chmod +x mvnw
           ./mvnw test

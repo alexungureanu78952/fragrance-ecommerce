@@ -114,10 +114,10 @@ card data is stored by this application.
 | SQL injection protection | Security I | 5, 8 | Search/filter input cannot alter query semantics and sorting accepts only allow-listed fields | Parameterized repository query and catalogue service tests |
 | Upload size limit | Security I | 5, 8 | Files over 12 MB are rejected before persistence | `ProductImageServiceTest`, upload test |
 | Approved upload extensions/MIME | Security I | 5, 8 | Non-approved extensions or MIME types are rejected | `ProductImageServiceTest`, upload test |
-| Rate limiting | Security II | 8 | More than 100 consecutive requests in under one minute are temporarily blocked | Rate-limit test and log |
+| Rate limiting | Security II | 8 | More than 100 consecutive requests in under one minute are temporarily blocked | `RateLimitFilterTest`, HTTP 429 response |
 | CAPTCHA | Security II | 8 | Abuse-prone flow requires a valid CAPTCHA result | Authentication/checkout test |
 | Steganography risk reduction | Security II | 8 | Uploaded files undergo content decoding, metadata capture, and content hashing beyond filename validation | `ProductImageService`, upload security test |
-| Security headers | Security II | 8, 10 | Security Headers Inspector reports grade A | Captured inspector report |
+| Security headers | Security II | 8, 10 | CSP, frame, referrer, and permissions headers are emitted; Inspector grade remains to be captured | `SecurityConfig`, captured inspector report pending |
 | `.htaccess` resource protection | Security II | 8, 10 | Private/configuration resources are inaccessible through the deployed web boundary | Deployment smoke test and configuration |
 
 ## Phase 1 exit-gate checklist
