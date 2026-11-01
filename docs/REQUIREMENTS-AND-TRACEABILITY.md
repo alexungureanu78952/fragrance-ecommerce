@@ -94,7 +94,7 @@ card data is stored by this application.
 | Images, text, tables, and links | Frontend | 7 | Catalogue and admin screens render each required content type with semantic markup | Component tests and screenshots |
 | At least three classes | Backend foundation | 4 | Backend contains at least three meaningful domain/service classes used by the application | Source and tests |
 | At least one interface | Payments | 2, 6 | Payment service interface is defined and invoked by the checkout service | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), API design and unit tests |
-| Authentication | Authentication | 4 | Registration and login tests pass for valid and invalid credentials | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), security integration tests |
+| Authentication | Authentication | 4 | Registration and login tests pass for valid and invalid credentials | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), `AuthServiceTest`, security integration tests |
 | Authorization | Access control | 4 | Customer access to administrator operations returns 403; ownership checks protect customer data | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), authorization tests |
 | Inheritance | Domain model | 2, 4 | `User` hierarchy intentionally models `Customer` and `Administrator` and is tested | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source, tests |
 | Two exception types | Error handling | 4 | At least two domain/application exception types map to structured HTTP errors | Exception tests |

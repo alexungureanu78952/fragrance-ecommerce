@@ -126,6 +126,15 @@ decision log before implementation continues.
 - Add validation, structured error responses, and global exception handling.
 - Add audit logging for authentication and administrative actions.
 
+**Current implementation progress**
+
+- Identity migration, normalized user-role tables, `User`/`Customer`/`Administrator`
+  inheritance, password hashing, HttpOnly session authentication, CSRF token
+  issuance, role authorization wiring, DTO validation, and problem responses are
+  implemented in the backend.
+- Catalogue, administrative product endpoints, audit persistence, and full
+  authorization integration tests remain part of the Phase 4/5 completion work.
+
 **Exit gate**
 
 - Authentication and authorization tests pass.
