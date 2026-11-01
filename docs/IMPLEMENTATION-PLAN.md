@@ -253,6 +253,8 @@ decision log before implementation continues.
   with external secret configuration and explicit failure responses when enabled.
 - Added an Apache `.htaccess` policy for static hosting to deny directory listing,
   dotfiles, environment files, logs, SQL, and configuration resources.
+- Verified the Flyway migrations and complete backend test suite against the local
+  PostgreSQL 16 Docker service, not only the H2 test profile.
 
 **Exit gate**
 
