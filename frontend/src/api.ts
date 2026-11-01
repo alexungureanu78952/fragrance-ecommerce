@@ -1,6 +1,8 @@
 export type Product = {
   id: string
+  brandId: string
   brandName: string
+  categoryId: string
   categoryName: string
   name: string
   description: string
@@ -54,6 +56,8 @@ export type OrderPage = {
   totalPages: number
 }
 
+export type Reference = { id: string; name: string; description: string }
+
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1'
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -105,4 +109,13 @@ export const api = {
     method: 'POST', body: JSON.stringify({ orderId }),
   }),
   orders: () => request<OrderPage>('/orders?size=20'),
+  brands: () => request<Reference[]>('/brands'),
+  categories: () => request<Reference[]>('/categories'),
+  createProduct: (product: Omit<Product, 'id' | 'brandName' | 'categoryName'> & { brandId: string; categoryId: string }) => request<Product>('/admin/products', {
+    method: 'POST', body: JSON.stringify(product),
+  }),
+  updateProduct: (id: string, product: Omit<Product, 'id' | 'brandName' | 'categoryName'> & { brandId: string; categoryId: string }) => request<Product>(`/admin/products/${id}`, {
+    method: 'PATCH', body: JSON.stringify(product),
+  }),
+  deactivateProduct: (id: string) => request<void>(`/admin/products/${id}`, { method: 'DELETE' }),
 }

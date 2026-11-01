@@ -217,7 +217,9 @@ decision log before implementation continues.
   `robots.txt`, and `sitemap.xml`.
 - Added order creation, Stripe checkout handoff, payment success/cancel routes, and
   authenticated customer order history.
-- Admin screens, frontend tests, and browser evidence remain.
+- Added role-aware administrator navigation and product create/update/deactivate UI
+  with explicit permission and API error states.
+- Frontend tests and browser evidence remain.
 
 **Exit gate**
 
