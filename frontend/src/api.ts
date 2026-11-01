@@ -90,11 +90,11 @@ export const api = {
   products: (search = '') => request<ProductPage>(`/products?size=24${search ? `&search=${encodeURIComponent(search)}` : ''}`),
   product: (id: string) => request<Product>(`/products/${id}`),
   me: () => request<User>('/auth/me'),
-  login: (email: string, password: string) => request<User>('/auth/login', {
-    method: 'POST', body: JSON.stringify({ email, password }),
+  login: (email: string, password: string, captchaToken?: string) => request<User>('/auth/login', {
+    method: 'POST', body: JSON.stringify({ email, password, captchaToken }),
   }),
-  register: (email: string, password: string, displayName: string) => request<User>('/auth/register', {
-    method: 'POST', body: JSON.stringify({ email, password, displayName }),
+  register: (email: string, password: string, displayName: string, captchaToken?: string) => request<User>('/auth/register', {
+    method: 'POST', body: JSON.stringify({ email, password, displayName, captchaToken }),
   }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   cart: () => request<Cart>('/cart'),

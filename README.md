@@ -45,6 +45,12 @@ Stripe checkout uses test mode only. Put `STRIPE_SECRET_KEY` and
 `STRIPE_WEBHOOK_SECRET` from a local Stripe test account in `.env` when
 demonstrating payments; never commit them or real card data.
 
+CAPTCHA is enabled for registration and login. Create an hCaptcha site in the
+hCaptcha dashboard, then put its public site key in `VITE_CAPTCHA_SITE_KEY` and
+its private verification secret in `CAPTCHA_SECRET`. Keep
+`CAPTCHA_ENABLED=true`. The site key is sent to the browser; the secret must
+remain backend-only.
+
 For Stripe webhooks, run the Stripe CLI in a separate terminal:
 
 ```text

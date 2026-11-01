@@ -242,7 +242,9 @@ decision log before implementation continues.
   strict CORS.
 - Add request rate limiting: block additional requests after 100 consecutive
   requests in under one minute.
-- Add CAPTCHA to abuse-prone flows such as registration, login, or checkout.
+- CAPTCHA protects registration and login with a provider-agnostic backend
+  verifier and hCaptcha frontend widget. The public site key and private
+  verification secret are configured separately.
 - Inspect uploaded file content and metadata to reduce steganography risk.
 - Configure security headers and verify an A result with Security Headers Inspector.
 - Protect configuration, logs, build files, and private resources at the proxy/server
@@ -255,7 +257,8 @@ decision log before implementation continues.
 - Added CSP, frame, referrer, and permissions security headers through Spring
   Security. CAPTCHA, upload metadata hardening, deployment-boundary evidence, and
   Security Headers Inspector verification remain.
-- Added a provider boundary for CAPTCHA verification on registration and login,
+- Added a provider boundary and hCaptcha widget for CAPTCHA verification on
+  registration and login,
   with external secret configuration and explicit failure responses when enabled.
 - Added an Apache `.htaccess` policy for static hosting to deny directory listing,
   dotfiles, environment files, logs, SQL, and configuration resources.

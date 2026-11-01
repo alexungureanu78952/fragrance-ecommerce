@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { api } from './api'
 import type { Cart, Order, Product, Reference, User } from './api'
 import './App.css'
@@ -132,9 +133,23 @@ function Account({ user }: { user: User | null }) {
 function Login({ onLogin }: { onLogin: (user: User) => void }) {
   const [registering, setRegistering] = useState(false)
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
+  const [captchaToken, setCaptchaToken] = useState('')
   const [error, setError] = useState('')
-  const submit = (event: FormEvent) => { event.preventDefault(); const action = registering ? api.register(form.email, form.password, form.displayName) : api.login(form.email, form.password); action.then(onLogin).catch((reason: Error) => setError(reason.message)) }
-  return <main className="auth-layout"><div><p className="eyebrow">{registering ? 'JOIN THE EDIT' : 'WELCOME BACK'}</p><h1>{registering ? 'Create your account.' : 'Enter quietly.'}</h1><p>{registering ? 'Save your selections and follow your orders.' : 'Sign in to continue your fragrance journey.'}</p></div><form className="auth-form" onSubmit={submit}>{registering && <label>Display name<input required value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} /></label>}<label>Email<input type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label><label>Password<input type="password" required value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>{error && <p className="error-text" role="alert">{error}</p>}<button className="button">{registering ? 'Create account' : 'Sign in'} <span>↗</span></button><button type="button" className="text-button" onClick={() => setRegistering(!registering)}>{registering ? 'Already have an account? Sign in' : 'New here? Create an account'}</button></form></main>
+  const captchaSiteKey = import.meta.env.VITE_CAPTCHA_SITE_KEY
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    setError('')
+    if (!captchaSiteKey || !captchaToken) {
+      setError('Complete the CAPTCHA verification before continuing.')
+      return
+    }
+    const action = registering
+      ? api.register(form.email, form.password, form.displayName, captchaToken)
+      : api.login(form.email, form.password, captchaToken)
+    action.then(onLogin).catch((reason: Error) => setError(reason.message))
+  }
+  const switchMode = () => { setRegistering(!registering); setCaptchaToken(''); setError('') }
+  return <main className="auth-layout"><div><p className="eyebrow">{registering ? 'JOIN THE EDIT' : 'WELCOME BACK'}</p><h1>{registering ? 'Create your account.' : 'Enter quietly.'}</h1><p>{registering ? 'Save your selections and follow your orders.' : 'Sign in to continue your fragrance journey.'}</p></div><form className="auth-form" onSubmit={submit}>{registering && <label>Display name<input required value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} /></label>}<label>Email<input type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label><label>Password<input type="password" required value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>{captchaSiteKey ? <HCaptcha sitekey={captchaSiteKey} onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} onError={() => setError('CAPTCHA could not load. Try again.')} /> : <p className="error-text" role="alert">CAPTCHA is not configured.</p>}{error && <p className="error-text" role="alert">{error}</p>}<button className="button" disabled={!captchaSiteKey || !captchaToken}>{registering ? 'Create account' : 'Sign in'} <span>↗</span></button><button type="button" className="text-button" onClick={switchMode}>{registering ? 'Already have an account? Sign in' : 'New here? Create an account'}</button></form></main>
 }
 
 function App() {
