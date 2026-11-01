@@ -98,11 +98,17 @@ function Catalog({ onOpen }: { onOpen: (id: string) => void }) {
 function ProductDetails({ id, onAdded }: { id: string; onAdded: () => void }) {
   const [product, setProduct] = useState<Product | null>(null)
   const [active, setActive] = useState(0)
+  const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  useEffect(() => { api.product(id).then(setProduct).catch((reason: Error) => setMessage(reason.message)) }, [id])
-  if (message) return <div className="state error-state"><strong>Product unavailable</strong><span>{message}</span></div>
+  useEffect(() => {
+    setProduct(null)
+    setError('')
+    setMessage('')
+    api.product(id).then(setProduct).catch((reason: Error) => setError(reason.message))
+  }, [id])
+  if (error) return <div className="state error-state"><strong>Product unavailable</strong><span>{error}</span></div>
   if (!product) return <p className="state">Loading product<span className="pulse">...</span></p>
-  return <main className="detail-layout"><ProductVisual product={product} active={active} onChange={setActive} /><section className="detail-copy"><p className="eyebrow">{product.brandName} · {product.categoryName}</p><h1>{product.name}</h1><p className="detail-price">{money(product.price)}</p><p>{product.description}</p><p className="stock">{product.stockQuantity > 0 ? `${product.stockQuantity} available` : 'Currently out of stock'}</p><button className="button" disabled={!product.stockQuantity} onClick={() => api.addToCart(product.id, 1).then(() => { setMessage('Added to your cart'); onAdded() }).catch((reason: Error) => setMessage(reason.message))}>Add to cart <span>↗</span></button>{message && <p className="success-message" role="status">{message}</p>}<a className="back-link" href="#/">← Back to collection</a></section></main>
+  return <main className="detail-layout"><ProductVisual product={product} active={active} onChange={setActive} /><section className="detail-copy"><p className="eyebrow">{product.brandName} · {product.categoryName}</p><h1>{product.name}</h1><p className="detail-price">{money(product.price)}</p><p>{product.description}</p><p className="stock">{product.stockQuantity > 0 ? `${product.stockQuantity} available` : 'Currently out of stock'}</p><button className="button" disabled={!product.stockQuantity} onClick={() => api.addToCart(product.id, 1).then(() => { setMessage('Added to your cart'); onAdded() }).catch((reason: Error) => setError(reason.message))}>Add to cart <span>↗</span></button>{message && <p className="success-message" role="status">{message}</p>}{error && <p className="error-text" role="alert">{error}</p>}<a className="back-link" href="#/">← Back to collection</a></section></main>
 }
 
 function CartPage({ cart, onChange, user }: { cart: Cart | null; onChange: () => void; user: User | null }) {

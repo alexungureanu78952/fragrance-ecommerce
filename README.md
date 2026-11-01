@@ -65,7 +65,9 @@ remain backend-only.
 For Stripe webhooks, run the Stripe CLI in a separate terminal:
 
 ```text
-stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe
+stripe listen `
+  --events checkout.session.completed,checkout.session.async_payment_failed,checkout.session.expired `
+  --forward-to http://localhost:8080/api/v1/webhooks/stripe
 ```
 
 Copy the `whsec_...` secret printed by the CLI into `STRIPE_WEBHOOK_SECRET` in
