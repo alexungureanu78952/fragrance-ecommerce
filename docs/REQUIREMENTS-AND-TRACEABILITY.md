@@ -111,7 +111,7 @@ card data is stored by this application.
 | Stripe payments | Payments | 6 | Stripe test-mode Checkout Session and signed webhook update order status while recording only provider ID/status | `PaymentServiceTest`, Stripe test-mode demonstration |
 | CSRF protection | Security I | 4, 8 | State-changing requests without valid CSRF protection are rejected | `AuthControllerIntegrationTest.stateChangingRequestsRequireCsrf` |
 | XSS protection | Security I | 4, 8 | User-controlled content is safely rendered and XSS payload tests do not execute | `App.test.tsx`, React text rendering test |
-| SQL injection protection | Security I | 5, 8 | Search/filter input cannot alter query semantics and sorting accepts only allow-listed fields | Parameterized repository query and catalogue service tests |
+| SQL injection protection | Security I | 5, 8 | Search/filter input cannot alter query semantics and sorting accepts only allow-listed fields | Parameterized repository query, PostgreSQL live catalogue smoke test, and catalogue service tests |
 | Upload size limit | Security I | 5, 8 | Files over 12 MB are rejected before persistence | `ProductImageServiceTest`, upload test |
 | Approved upload extensions/MIME | Security I | 5, 8 | Non-approved extensions or MIME types are rejected | `ProductImageServiceTest`, upload test |
 | Rate limiting | Security II | 8 | More than 100 consecutive requests in under one minute are temporarily blocked | `RateLimitFilterTest`, HTTP 429 response |

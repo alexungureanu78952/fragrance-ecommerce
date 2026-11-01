@@ -88,4 +88,11 @@ class AuthControllerIntegrationTest {
                 .content(objectMapper.writeValueAsString(register)))
             .andExpect(status().isForbidden());
     }
+
+    @Test
+    void publicProductCollectionDoesNotRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/api/v1/products"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items").isArray());
+    }
 }

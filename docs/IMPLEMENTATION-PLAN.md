@@ -221,6 +221,9 @@ decision log before implementation continues.
   with explicit permission and API error states.
 - Added Vitest and Testing Library coverage for catalogue rendering, empty state,
   product navigation, and accessible carousel controls. Browser evidence remains.
+- Verified the live local storefront against the running backend: the public
+  catalogue returns successfully, the empty catalogue state renders, the
+  unauthorized cart state prompts for sign-in, and the login route renders.
 
 **Exit gate**
 
@@ -255,6 +258,9 @@ decision log before implementation continues.
   dotfiles, environment files, logs, SQL, and configuration resources.
 - Verified the Flyway migrations and complete backend test suite against the local
   PostgreSQL 16 Docker service, not only the H2 test profile.
+- Fixed PostgreSQL catalogue search parameter typing by using an explicit empty
+  search sentinel; the live product collection now returns HTTP 200 without a
+  search term.
 
 **Exit gate**
 

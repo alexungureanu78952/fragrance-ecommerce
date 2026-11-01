@@ -14,7 +14,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         join fetch p.brand b
         join fetch p.category c
         where p.active = true
-          and (:search is null or lower(p.name) like lower(concat('%', :search, '%'))
+          and (:search = '' or lower(p.name) like lower(concat('%', :search, '%'))
                or lower(p.description) like lower(concat('%', :search, '%'))
                or lower(b.name) like lower(concat('%', :search, '%')))
           and (:brandId is null or b.id = :brandId)

@@ -70,7 +70,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf", "/api/v1/products/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf").permitAll()
+                .requestMatchers("/api/v1/products", "/api/v1/products/**").permitAll()
                 .requestMatchers("/api/v1/webhooks/stripe").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMINISTRATOR")
                 .requestMatchers("/api/v1/auth/**").authenticated()
