@@ -77,6 +77,14 @@ public class Product {
         updatedAt = Instant.now();
     }
 
+    public void restoreStock(int quantity) {
+        if (quantity < 1) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+        stockQuantity += quantity;
+        updatedAt = Instant.now();
+    }
+
     public UUID getId() { return id; }
     public Brand getBrand() { return brand; }
     public Category getCategory() { return category; }

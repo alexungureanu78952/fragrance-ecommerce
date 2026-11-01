@@ -41,6 +41,7 @@ public class OrderItem {
         this.quantity = quantity;
         this.lineTotal = unitPriceSnapshot.multiply(BigDecimal.valueOf(quantity));
     }
+    public Product getProduct() { return product; }
     public String getProductNameSnapshot() { return productNameSnapshot; }
     public BigDecimal getUnitPriceSnapshot() { return unitPriceSnapshot; }
     public int getQuantity() { return quantity; }

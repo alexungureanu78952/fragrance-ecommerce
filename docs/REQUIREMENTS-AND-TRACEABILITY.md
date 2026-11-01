@@ -77,7 +77,9 @@ snapshots.
 2. The backend creates a Stripe test-mode payment using server-side credentials.
 3. The application stores only provider identifiers and payment status.
 4. A verified payment result changes the order to the appropriate status.
-5. Failed or canceled payment is shown explicitly without exposing secrets.
+5. Failed, canceled, or unavailable checkout is shown explicitly without exposing
+   secrets; an unavailable provider does not leave a locked pending order or consume
+   reserved stock.
 6. The customer can view the resulting order and payment status in order history.
 
 **Acceptance test:** Integration tests cover successful, failed, canceled, duplicate,
@@ -108,7 +110,7 @@ card data is stored by this application.
 | User activity logging | Operations | 4, 8, 10 | Authentication and product administration actions are persisted and written to a structured application log without secrets | `AuditLogService`, log configuration and sample |
 | Hosting | Deployment | 10 | Public URL serves the application | Deployment URL and smoke test |
 | SEO | SEO | 10 | Lighthouse SEO score is at least 90/100 and required metadata is present | Lighthouse report |
-| Stripe payments | Payments | 6 | Stripe test-mode Checkout Session and signed webhook update order status while recording only provider ID/status | `PaymentServiceTest`, Stripe test-mode demonstration |
+| Stripe payments | Payments | 6 | Stripe test-mode Checkout Session and signed webhook update order status while recording only provider ID/status; provider failure marks payment/order failed and releases reserved stock | `PaymentServiceTest`, Stripe test-mode demonstration |
 | CSRF protection | Security I | 4, 8 | State-changing requests without valid CSRF protection are rejected | `AuthControllerIntegrationTest.stateChangingRequestsRequireCsrf`; browser registration/login verified with the configured `X-CSRF-TOKEN` header |
 | XSS protection | Security I | 4, 8 | User-controlled content is safely rendered and XSS payload tests do not execute | `App.test.tsx`, React text rendering test |
 | SQL injection protection | Security I | 5, 8 | Search/filter input cannot alter query semantics and sorting accepts only allow-listed fields | Parameterized repository query, PostgreSQL live catalogue smoke test, and catalogue service tests |

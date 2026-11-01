@@ -5,6 +5,7 @@ import com.fragrance.ecommerce.domain.Payment;
 import com.fragrance.ecommerce.domain.PaymentStatus;
 import com.fragrance.ecommerce.domain.OrderStatus;
 import com.fragrance.ecommerce.exception.NotFoundException;
+import com.fragrance.ecommerce.exception.CheckoutUnavailableException;
 import com.fragrance.ecommerce.repository.OrderRepository;
 import com.fragrance.ecommerce.repository.PaymentRepository;
 import java.util.UUID;
@@ -23,12 +24,27 @@ public class PaymentService {
         this.provider = provider;
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = CheckoutUnavailableException.class)
     public PaymentProvider.CheckoutSession checkout(UUID customerId, UUID orderId) {
         var order = ownedOrder(customerId, orderId);
         var payment = payments.findByOrderId(orderId)
             .orElseGet(() -> payments.save(new Payment(order, "stripe")));
-        var session = provider.createCheckout(order, payment);
+        PaymentProvider.CheckoutSession session;
+        try {
+            session = provider.createCheckout(order, payment);
+        } catch (RuntimeException exception) {
+            payment.recordProviderPayment(null, PaymentStatus.FAILED);
+            if (order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+                for (var item : order.getItems()) {
+                    if (item.getProduct() != null) {
+                        item.getProduct().restoreStock(item.getQuantity());
+                    }
+                }
+                order.markPaymentFailed();
+            }
+            throw new CheckoutUnavailableException(
+                "Payment checkout is temporarily unavailable. No payment was taken.", exception);
+        }
         payment.recordProviderPayment(session.providerPaymentId(), PaymentStatus.CREATED);
         return session;
     }

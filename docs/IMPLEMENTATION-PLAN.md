@@ -190,6 +190,9 @@ decision log before implementation continues.
 - Stripe Checkout Session creation, signed webhook verification, provider-agnostic
   payment persistence, and payment/order status updates are implemented. Credentials
   remain externalized and test-mode only.
+- Checkout-provider failures are handled explicitly: payment and order are marked
+  failed, reserved stock is restored once, and the API returns a clear availability
+  error instead of leaving a locked pending order.
 
 **Exit gate**
 

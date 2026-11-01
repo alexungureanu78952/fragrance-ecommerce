@@ -1,6 +1,7 @@
 package com.fragrance.ecommerce.configuration;
 
 import com.fragrance.ecommerce.exception.ConflictException;
+import com.fragrance.ecommerce.exception.CheckoutUnavailableException;
 import com.fragrance.ecommerce.exception.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -17,6 +18,12 @@ public class RestExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     ProblemDetail conflict(ConflictException exception, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "Conflict", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(CheckoutUnavailableException.class)
+    ProblemDetail checkoutUnavailable(CheckoutUnavailableException exception,
+                                      HttpServletRequest request) {
+        return problem(HttpStatus.BAD_GATEWAY, "Checkout unavailable", exception.getMessage(), request);
     }
 
     @ExceptionHandler(NotFoundException.class)

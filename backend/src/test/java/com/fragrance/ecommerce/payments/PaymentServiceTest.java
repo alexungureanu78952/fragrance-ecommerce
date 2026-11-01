@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fragrance.ecommerce.domain.Brand;
 import com.fragrance.ecommerce.domain.Category;
@@ -12,6 +13,7 @@ import com.fragrance.ecommerce.domain.Customer;
 import com.fragrance.ecommerce.domain.Order;
 import com.fragrance.ecommerce.domain.Payment;
 import com.fragrance.ecommerce.domain.Role;
+import com.fragrance.ecommerce.exception.CheckoutUnavailableException;
 import com.fragrance.ecommerce.repository.OrderRepository;
 import com.fragrance.ecommerce.repository.PaymentRepository;
 import java.math.BigDecimal;
@@ -66,6 +68,19 @@ class PaymentServiceTest {
 
         assertThat(payment.getStatus().name()).isEqualTo("PAID");
         assertThat(order.getStatus().name()).isEqualTo("PAID");
+    }
+
+    @Test
+    void providerFailureMarksOrderAndPaymentFailed() {
+        when(provider.createCheckout(order, payment))
+            .thenThrow(new IllegalStateException("Stripe secret key is missing"));
+
+        assertThatThrownBy(() -> service.checkout(customer.getId(), order.getId()))
+            .isInstanceOf(CheckoutUnavailableException.class)
+            .hasMessageContaining("No payment was taken");
+
+        assertThat(payment.getStatus().name()).isEqualTo("FAILED");
+        assertThat(order.getStatus().name()).isEqualTo("PAYMENT_FAILED");
     }
 
     @Test
