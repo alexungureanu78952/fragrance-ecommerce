@@ -66,4 +66,27 @@ describe('storefront', () => {
     render(<App />)
     await waitFor(() => expect(screen.getByText('No fragrances match that search.')).toBeInTheDocument())
   })
+
+  it('renders catalogue text as text instead of executable markup', async () => {
+    mockedApi.products.mockResolvedValue({
+      items: [{
+        id: 'product-xss',
+        brandId: 'brand-1',
+        brandName: 'Nocturne',
+        categoryId: 'category-1',
+        categoryName: 'Woody',
+        name: '<img src=x onerror=alert(1)>',
+        description: 'Safe text',
+        price: 42,
+        stockQuantity: 4,
+      }],
+      page: 0,
+      size: 24,
+      totalItems: 1,
+      totalPages: 1,
+    })
+    render(<App />)
+    expect(await screen.findByText('<img src=x onerror=alert(1)>')).toBeInTheDocument()
+    expect(document.querySelector('img[src="x"]')).toBeNull()
+  })
 })
