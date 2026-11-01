@@ -41,6 +41,17 @@ must not be used to process real payments or store real payment card data.
 The frontend reads `VITE_API_URL` from the root `.env` when using the default
 local URL. If you change it, restart the Vite development server.
 
+## Local demo accounts
+
+These are fake accounts for local testing only:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Customer | `demo.customer@example.test` | `DemoCustomer!2026` |
+| Administrator | `demo.admin@example.test` | `DemoAdmin!2026` |
+
+Do not reuse these credentials outside the local educational environment.
+
 Stripe checkout uses test mode only. Put `STRIPE_SECRET_KEY` and
 `STRIPE_WEBHOOK_SECRET` from a local Stripe test account in `.env` when
 demonstrating payments; never commit them or real card data.
