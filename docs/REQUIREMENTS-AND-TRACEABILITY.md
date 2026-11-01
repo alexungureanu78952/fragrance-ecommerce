@@ -105,7 +105,7 @@ card data is stored by this application.
 | Five unit tests | Testing | 9 | CI reports at least five meaningful business-rule unit tests | CI test report |
 | Git versioning | Delivery | 0 | Repository has history with coherent commits | GitHub repository |
 | GitHub Actions CI/CD | Delivery | 0, 9 | Push and pull request workflow installs, lints/tests, and builds successfully | Workflow run |
-| User activity logging | Operations | 4, 8, 10 | Authentication actions are persisted and written to a structured application log without secrets; administrative actions are added with admin CRUD | `AuditLogService`, log configuration and sample |
+| User activity logging | Operations | 4, 8, 10 | Authentication and product administration actions are persisted and written to a structured application log without secrets | `AuditLogService`, log configuration and sample |
 | Hosting | Deployment | 10 | Public URL serves the application | Deployment URL and smoke test |
 | SEO | SEO | 10 | Lighthouse SEO score is at least 90/100 and required metadata is present | Lighthouse report |
 | Stripe payments | Payments | 6 | Stripe test-mode checkout completes and records only provider ID/status | Integration test and demonstration |

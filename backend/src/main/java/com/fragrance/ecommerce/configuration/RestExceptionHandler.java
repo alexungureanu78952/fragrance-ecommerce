@@ -1,6 +1,7 @@
 package com.fragrance.ecommerce.configuration;
 
 import com.fragrance.ecommerce.exception.ConflictException;
+import com.fragrance.ecommerce.exception.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.Map;
@@ -16,6 +17,11 @@ public class RestExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     ProblemDetail conflict(ConflictException exception, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "Conflict", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    ProblemDetail notFound(NotFoundException exception, HttpServletRequest request) {
+        return problem(HttpStatus.NOT_FOUND, "Not found", exception.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -153,6 +153,14 @@ decision log before implementation continues.
 - Implement upload limits: maximum 12 MB and approved extensions/MIME types.
 - Add server-side validation and safe file handling.
 
+**Current implementation progress**
+
+- Product, brand, category schema; public active-product pagination/details; admin
+  create/update/soft-delete; service validation; and product business-rule tests
+  are implemented.
+- Image metadata, upload restrictions, search/filter/sort, and catalogue frontend
+  remain to be completed.
+
 **Exit gate**
 
 - Admin product CRUD and customer catalogue browsing are complete scenarios.
