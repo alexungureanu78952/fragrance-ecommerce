@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api } from './api'
-import type { Cart, Product, User } from './api'
+import type { Cart, Order, Product, User } from './api'
 import './App.css'
 
-type Route = { page: 'catalog' | 'product' | 'cart' | 'login' | 'account'; id?: string }
+type Route = { page: 'catalog' | 'product' | 'cart' | 'login' | 'account' | 'payment-success' | 'payment-cancel'; id?: string }
 
 function route(): Route {
   const [path, id] = window.location.hash.replace(/^#\/?/, '').split('/')
@@ -12,6 +12,8 @@ function route(): Route {
   if (path === 'cart') return { page: 'cart' }
   if (path === 'login') return { page: 'login' }
   if (path === 'account') return { page: 'account' }
+  if (path === 'checkout' && id === 'success') return { page: 'payment-success' }
+  if (path === 'checkout' && id === 'cancel') return { page: 'payment-cancel' }
   return { page: 'catalog' }
 }
 
@@ -82,9 +84,28 @@ function ProductDetails({ id, onAdded }: { id: string; onAdded: () => void }) {
 }
 
 function CartPage({ cart, onChange, user }: { cart: Cart | null; onChange: () => void; user: User | null }) {
+  const [error, setError] = useState('')
+  const [checkingOut, setCheckingOut] = useState(false)
   if (!user) return <div className="state error-state"><strong>Sign in to view your cart.</strong><a className="button" href="#/login">Sign in</a></div>
   if (!cart) return <p className="state">Loading your cart<span className="pulse">...</span></p>
-  return <main className="cart-layout"><section><p className="eyebrow">YOUR SELECTION</p><h1>Shopping cart</h1>{cart.items.length === 0 ? <p className="state">Your cart is waiting for a fragrance.</p> : cart.items.map((item) => <div className="cart-item" key={item.productId}><ProductVisual product={{ id: item.productId, brandName: '', categoryName: '', name: item.productName, description: '', price: item.unitPrice, stockQuantity: 1 }} /><div><h3>{item.productName}</h3><p>{money(item.unitPrice)}</p><label>Quantity <input type="number" min="1" value={item.quantity} onChange={(event) => api.updateCart(item.productId, Number(event.target.value)).then(onChange)} /></label><button className="text-button" onClick={() => api.removeFromCart(item.productId).then(onChange)}>Remove</button></div><strong>{money(item.lineTotal)}</strong></div>)}</section>{cart.items.length > 0 && <aside className="summary"><p className="eyebrow">ORDER SUMMARY</p><div><span>Total</span><strong>{money(cart.total)}</strong></div><p>Payment is completed securely in Stripe test mode.</p><button className="button" disabled>Proceed to checkout <span>↗</span></button></aside>}</main>
+  const checkout = () => {
+    setCheckingOut(true)
+    setError('')
+    api.createOrder(crypto.randomUUID()).then((order) => api.checkout(order.id)).then((session) => { window.location.href = session.checkoutUrl }).catch((reason: Error) => setError(reason.message)).finally(() => setCheckingOut(false))
+  }
+  return <main className="cart-layout"><section><p className="eyebrow">YOUR SELECTION</p><h1>Shopping cart</h1>{cart.items.length === 0 ? <p className="state">Your cart is waiting for a fragrance.</p> : cart.items.map((item) => <div className="cart-item" key={item.productId}><ProductVisual product={{ id: item.productId, brandName: '', categoryName: '', name: item.productName, description: '', price: item.unitPrice, stockQuantity: 1 }} /><div><h3>{item.productName}</h3><p>{money(item.unitPrice)}</p><label>Quantity <input type="number" min="1" value={item.quantity} onChange={(event) => api.updateCart(item.productId, Number(event.target.value)).then(onChange)} /></label><button className="text-button" onClick={() => api.removeFromCart(item.productId).then(onChange)}>Remove</button></div><strong>{money(item.lineTotal)}</strong></div>)}</section>{cart.items.length > 0 && <aside className="summary"><p className="eyebrow">ORDER SUMMARY</p><div><span>Total</span><strong>{money(cart.total)}</strong></div><p>Payment is completed securely in Stripe test mode.</p>{error && <p className="error-text" role="alert">{error}</p>}<button className="button" disabled={checkingOut} onClick={checkout}>{checkingOut ? 'Preparing checkout...' : 'Proceed to checkout'} <span>↗</span></button></aside>}</main>
+}
+
+function PaymentResult({ canceled = false }: { canceled?: boolean }) {
+  return <main className="state payment-result"><p className="eyebrow">{canceled ? 'CHECKOUT CANCELED' : 'PAYMENT RECEIVED'}</p><h1>{canceled ? 'Your selection is still here.' : 'Thank you for your order.'}</h1><p>{canceled ? 'No payment was taken. You can return to your cart whenever you are ready.' : 'Stripe will confirm the payment and your order status will update shortly.'}</p><div><a className="button" href={canceled ? '#/cart' : '#/account'}>{canceled ? 'Return to cart' : 'View order history'} <span>↗</span></a><a className="back-link" href="#/">Continue browsing</a></div></main>
+}
+
+function Account({ user }: { user: User | null }) {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [error, setError] = useState('')
+  useEffect(() => { if (user) api.orders().then((page) => setOrders(page.items)).catch((reason: Error) => setError(reason.message)) }, [user])
+  if (!user) return <main className="state error-state"><strong>Sign in to view your account.</strong><a className="button" href="#/login">Sign in</a></main>
+  return <main className="account-layout"><div><p className="eyebrow">YOUR ACCOUNT</p><h1>Hello, {user.displayName}.</h1><p className="muted">{user.email}</p></div><section><div className="section-heading"><div><p className="eyebrow">ORDER HISTORY</p><h2>Your orders</h2></div></div>{error && <p className="error-text" role="alert">{error}</p>}{!error && orders.length === 0 && <p className="state">Your completed orders will appear here.</p>}{orders.map((order) => <article className="order-card" key={order.id}><div><strong>Order {order.id.slice(0, 8)}</strong><span>{order.status.replace('_', ' ')}</span></div><strong>{money(order.total)}</strong><ul>{order.items.map((item) => <li key={`${order.id}-${item.productName}`}>{item.quantity} × {item.productName}</li>)}</ul></article>)}</section></main>
 }
 
 function Login({ onLogin }: { onLogin: (user: User) => void }) {
@@ -103,7 +124,7 @@ function App() {
   useEffect(() => { if (user) api.cart().then(setCart).catch(() => setCart(null)); else setCart(null) }, [user])
   const refreshCart = () => { if (user) api.cart().then(setCart) }
   const logout = () => api.logout().then(() => setUser(null)).then(() => { window.location.hash = '#/' })
-  return <><Header user={user} cartCount={cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0} onLogout={logout} /><div className="page">{current.page === 'catalog' && <Catalog onOpen={(id) => { window.location.hash = `#/product/${id}` }} />}{current.page === 'product' && current.id && <ProductDetails id={current.id} onAdded={refreshCart} />}{current.page === 'cart' && <CartPage cart={cart} onChange={refreshCart} user={user} />}{current.page === 'login' && <Login onLogin={(next) => { setUser(next); window.location.hash = '#/' }} />}{current.page === 'account' && <main className="state"><p className="eyebrow">YOUR ACCOUNT</p><h1>{user ? `Hello, ${user.displayName}.` : 'Sign in to view your account.'}</h1>{!user && <a className="button" href="#/login">Sign in</a>}</main>}</div><footer><span>NOCTURNE FRAGRANCE</span><span>Educational shop · Stripe test mode only</span></footer></>
+  return <><Header user={user} cartCount={cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0} onLogout={logout} /><div className="page">{current.page === 'catalog' && <Catalog onOpen={(id) => { window.location.hash = `#/product/${id}` }} />}{current.page === 'product' && current.id && <ProductDetails id={current.id} onAdded={refreshCart} />}{current.page === 'cart' && <CartPage cart={cart} onChange={refreshCart} user={user} />}{current.page === 'login' && <Login onLogin={(next) => { setUser(next); window.location.hash = '#/' }} />}{current.page === 'account' && <Account user={user} />}{current.page === 'payment-success' && <PaymentResult />}{current.page === 'payment-cancel' && <PaymentResult canceled />}</div><footer><span>NOCTURNE FRAGRANCE</span><span>Educational shop · Stripe test mode only</span></footer></>
 }
 
 export default App

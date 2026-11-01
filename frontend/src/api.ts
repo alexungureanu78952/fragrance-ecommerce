@@ -34,6 +34,26 @@ export type User = {
   roles: string[]
 }
 
+export type Order = {
+  id: string
+  status: string
+  total: number
+  items: Array<{
+    productName: string
+    unitPrice: number
+    quantity: number
+    lineTotal: number
+  }>
+}
+
+export type OrderPage = {
+  items: Order[]
+  page: number
+  size: number
+  totalItems: number
+  totalPages: number
+}
+
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1'
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -78,4 +98,11 @@ export const api = {
     method: 'PATCH', body: JSON.stringify({ quantity }),
   }),
   removeFromCart: (productId: string) => request<Cart>(`/cart/items/${productId}`, { method: 'DELETE' }),
+  createOrder: (idempotencyKey: string) => request<Order>('/orders', {
+    method: 'POST', body: JSON.stringify({ idempotencyKey }),
+  }),
+  checkout: (orderId: string) => request<{ providerSessionId: string; checkoutUrl: string }>('/payments/checkout', {
+    method: 'POST', body: JSON.stringify({ orderId }),
+  }),
+  orders: () => request<OrderPage>('/orders?size=20'),
 }

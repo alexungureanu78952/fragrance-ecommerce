@@ -215,7 +215,9 @@ decision log before implementation continues.
 - Added loading, empty, error, and unauthorized states, keyboard-accessible carousel
   controls, reduced-motion support, responsive CSS, and initial SEO metadata,
   `robots.txt`, and `sitemap.xml`.
-- Checkout payment-result, admin screens, frontend tests, and browser evidence remain.
+- Added order creation, Stripe checkout handoff, payment success/cancel routes, and
+  authenticated customer order history.
+- Admin screens, frontend tests, and browser evidence remain.
 
 **Exit gate**
 

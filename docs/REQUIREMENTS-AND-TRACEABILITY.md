@@ -89,7 +89,7 @@ card data is stored by this application.
 | Rubric requirement | Owner | Planned phase | Measurable acceptance test | Evidence |
 |---|---|---:|---|---|
 | Database is in 3NF | Data design | 2 | ERD and schema review show atomic attributes, no repeating groups, and dependencies on the complete key | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), migrations, review record |
-| Four complete scenarios | Product team | 4–7 | S1–S4 pass their scenario acceptance tests end to end | Test report and demonstration script |
+| Four complete scenarios | Product team | 4–7 | S1–S4 pass their scenario acceptance tests end to end; customer checkout now reaches the Stripe handoff and result routes | Test report and demonstration script; browser evidence pending |
 | MVC/Repository architecture | Backend foundation | 2, 4 | Controllers, services, repositories, domain, security, and configuration have separated responsibilities | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source tree |
 | Images, text, tables, and links | Frontend | 7 | Catalogue and admin screens render each required content type with semantic markup | Component tests and screenshots |
 | At least three classes | Backend foundation | 4 | Backend contains at least three meaningful domain/service classes used by the application | Source and tests |
