@@ -14,7 +14,9 @@ must not be used to process real payments or store real payment card data.
 
 ## Local setup
 
-1. Copy `.env.example` to `.env` and replace the local-only password if desired.
+1. Copy `.env.example` to `.env` and enter your local values. The root `.env` is
+   ignored by Git, loaded automatically by Docker Compose, and imported by the
+   backend when it is started from the `backend` directory.
 2. Start PostgreSQL:
 
    ```text
@@ -36,10 +38,18 @@ must not be used to process real payments or store real payment card data.
    npm run dev
    ```
 
-The backend and frontend are intentionally empty scaffolds at the end of Phase 0.
-Feature implementation starts only after the requirements and architecture phases
-are approved.
+The frontend reads `VITE_API_URL` from the root `.env` when using the default
+local URL. If you change it, restart the Vite development server.
 
-Stripe checkout uses test mode only. Set `STRIPE_SECRET_KEY` and
-`STRIPE_WEBHOOK_SECRET` from a local Stripe test account when demonstrating
-payments; never commit them or real card data.
+Stripe checkout uses test mode only. Put `STRIPE_SECRET_KEY` and
+`STRIPE_WEBHOOK_SECRET` from a local Stripe test account in `.env` when
+demonstrating payments; never commit them or real card data.
+
+For Stripe webhooks, run the Stripe CLI in a separate terminal:
+
+```text
+stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe
+```
+
+Copy the `whsec_...` secret printed by the CLI into `STRIPE_WEBHOOK_SECRET` in
+`.env`, then restart the backend.
