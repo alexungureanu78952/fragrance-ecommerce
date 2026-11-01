@@ -109,7 +109,7 @@ card data is stored by this application.
 | Hosting | Deployment | 10 | Public URL serves the application | Deployment URL and smoke test |
 | SEO | SEO | 10 | Lighthouse SEO score is at least 90/100 and required metadata is present | Lighthouse report |
 | Stripe payments | Payments | 6 | Stripe test-mode Checkout Session and signed webhook update order status while recording only provider ID/status | `PaymentServiceTest`, Stripe test-mode demonstration |
-| CSRF protection | Security I | 4, 8 | State-changing requests without valid CSRF protection are rejected | `AuthControllerIntegrationTest.stateChangingRequestsRequireCsrf` |
+| CSRF protection | Security I | 4, 8 | State-changing requests without valid CSRF protection are rejected | `AuthControllerIntegrationTest.stateChangingRequestsRequireCsrf`; browser registration/login verified with the configured `X-CSRF-TOKEN` header |
 | XSS protection | Security I | 4, 8 | User-controlled content is safely rendered and XSS payload tests do not execute | `App.test.tsx`, React text rendering test |
 | SQL injection protection | Security I | 5, 8 | Search/filter input cannot alter query semantics and sorting accepts only allow-listed fields | Parameterized repository query, PostgreSQL live catalogue smoke test, and catalogue service tests |
 | Upload size limit | Security I | 5, 8 | Files over 12 MB are rejected before persistence | `ProductImageServiceTest`, upload test |

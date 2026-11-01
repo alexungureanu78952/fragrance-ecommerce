@@ -261,6 +261,8 @@ decision log before implementation continues.
 - Fixed PostgreSQL catalogue search parameter typing by using an explicit empty
   search sentinel; the live product collection now returns HTTP 200 without a
   search term.
+- Verified browser authentication after aligning the client with Spring's
+  `X-CSRF-TOKEN` response header and allowing that header through configured CORS.
 
 **Exit gate**
 

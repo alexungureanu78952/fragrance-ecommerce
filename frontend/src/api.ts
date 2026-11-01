@@ -66,8 +66,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (init.method && init.method !== 'GET') {
     const csrf = await fetch(`${API_URL}/auth/csrf`, { credentials: 'include' })
     if (csrf.ok) {
-      const token = (await csrf.json()) as { token: string }
-      headers.set('X-XSRF-TOKEN', token.token)
+      const token = await csrf.json() as { token?: string; headerName?: string }
+      if (!token.token || !token.headerName) {
+        throw new Error('CSRF token response was invalid')
+      }
+      headers.set(token.headerName, token.token)
     }
   }
   const response = await fetch(`${API_URL}${path}`, {
