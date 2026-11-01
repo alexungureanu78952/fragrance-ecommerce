@@ -187,8 +187,9 @@ decision log before implementation continues.
   cart after creation.
 - Customer order history and ownership checks are implemented and covered by focused
   cart/order business-rule tests.
-- Stripe payment persistence and verified Checkout/webhook integration remain before
-  this phase can pass its exit gate.
+- Stripe Checkout Session creation, signed webhook verification, provider-agnostic
+  payment persistence, and payment/order status updates are implemented. Credentials
+  remain externalized and test-mode only.
 
 **Exit gate**
 

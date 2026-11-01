@@ -39,3 +39,7 @@ must not be used to process real payments or store real payment card data.
 The backend and frontend are intentionally empty scaffolds at the end of Phase 0.
 Feature implementation starts only after the requirements and architecture phases
 are approved.
+
+Stripe checkout uses test mode only. Set `STRIPE_SECRET_KEY` and
+`STRIPE_WEBHOOK_SECRET` from a local Stripe test account when demonstrating
+payments; never commit them or real card data.

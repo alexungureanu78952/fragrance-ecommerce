@@ -63,10 +63,12 @@ public class Order {
     public UUID getId() { return id; }
     public Customer getCustomer() { return customer; }
     public OrderStatus getStatus() { return status; }
+    public String getCurrency() { return currency; }
     public BigDecimal getTotal() { return total; }
     public List<OrderItem> getItems() { return List.copyOf(items); }
     public void markPaid() { transition(OrderStatus.PAID); }
     public void markPaymentFailed() { transition(OrderStatus.PAYMENT_FAILED); }
+    public void markCanceled() { transition(OrderStatus.CANCELED); }
     private void transition(OrderStatus next) {
         if (status != OrderStatus.PENDING_PAYMENT) {
             throw new IllegalStateException("Order status cannot transition from " + status);
