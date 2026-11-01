@@ -98,13 +98,13 @@ card data is stored by this application.
 | Authorization | Access control | 4 | Customer access to administrator operations returns 403; ownership checks protect customer data | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), `AuthControllerIntegrationTest`, authorization tests |
 | Inheritance | Domain model | 2, 4 | `User` hierarchy intentionally models `Customer` and `Administrator` and is tested | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source, tests |
 | Two exception types | Error handling | 4 | At least two domain/application exception types map to structured HTTP errors | Exception tests |
-| Image carousel | Frontend UX | 3, 7 | Product detail view provides button-controlled, keyboard-accessible image states | [UX and visual design](UX-AND-VISUAL-DESIGN.md), `ProductVisual`, browser evidence pending |
+| Image carousel | Frontend UX | 3, 7 | Product detail view provides button-controlled, keyboard-accessible image states | [UX and visual design](UX-AND-VISUAL-DESIGN.md), `App.test.tsx`, browser evidence pending |
 | Purposeful animation | Frontend UX | 3, 7 | Loading pulse and carousel transitions communicate state and respect reduced motion | [UX and visual design](UX-AND-VISUAL-DESIGN.md), CSS, browser evidence pending |
 | Two CSS files and 10 properties | Frontend styling | 7 | Organized `index.css` and `App.css` provide the responsive visual system | [UX and visual design](UX-AND-VISUAL-DESIGN.md), source inspection and build |
-| Responsive design | Frontend styling | 3, 7 | Catalogue, details, cart, and auth layouts include mobile/tablet breakpoints | [UX and visual design](UX-AND-VISUAL-DESIGN.md), viewport evidence pending |
+| Responsive design | Frontend styling | 3, 7 | Catalogue, details, cart, and auth layouts include mobile/tablet breakpoints | [UX and visual design](UX-AND-VISUAL-DESIGN.md), CSS, browser viewport evidence pending |
 | Five unit tests | Testing | 9 | CI reports at least five meaningful business-rule unit tests | CI test report |
 | Git versioning | Delivery | 0 | Repository has history with coherent commits | GitHub repository |
-| GitHub Actions CI/CD | Delivery | 0, 9 | Push and pull request workflow installs, lints/tests, and builds successfully | Workflow run |
+| GitHub Actions CI/CD | Delivery | 0, 9 | Push and pull request workflow installs, lints/tests, and builds backend and frontend | Workflow run |
 | User activity logging | Operations | 4, 8, 10 | Authentication and product administration actions are persisted and written to a structured application log without secrets | `AuditLogService`, log configuration and sample |
 | Hosting | Deployment | 10 | Public URL serves the application | Deployment URL and smoke test |
 | SEO | SEO | 10 | Lighthouse SEO score is at least 90/100 and required metadata is present | Lighthouse report |

@@ -219,7 +219,8 @@ decision log before implementation continues.
   authenticated customer order history.
 - Added role-aware administrator navigation and product create/update/deactivate UI
   with explicit permission and API error states.
-- Frontend tests and browser evidence remain.
+- Added Vitest and Testing Library coverage for catalogue rendering, empty state,
+  product navigation, and accessible carousel controls. Browser evidence remains.
 
 **Exit gate**
 
