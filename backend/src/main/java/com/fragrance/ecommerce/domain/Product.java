@@ -69,6 +69,14 @@ public class Product {
         this.updatedAt = Instant.now();
     }
 
+    public void decreaseStock(int quantity) {
+        if (quantity < 1 || stockQuantity < quantity) {
+            throw new IllegalArgumentException("Insufficient stock");
+        }
+        stockQuantity -= quantity;
+        updatedAt = Instant.now();
+    }
+
     public UUID getId() { return id; }
     public Brand getBrand() { return brand; }
     public Category getCategory() { return category; }

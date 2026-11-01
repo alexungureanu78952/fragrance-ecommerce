@@ -108,7 +108,7 @@ card data is stored by this application.
 | User activity logging | Operations | 4, 8, 10 | Authentication and product administration actions are persisted and written to a structured application log without secrets | `AuditLogService`, log configuration and sample |
 | Hosting | Deployment | 10 | Public URL serves the application | Deployment URL and smoke test |
 | SEO | SEO | 10 | Lighthouse SEO score is at least 90/100 and required metadata is present | Lighthouse report |
-| Stripe payments | Payments | 6 | Stripe test-mode checkout completes and records only provider ID/status | Integration test and demonstration |
+| Stripe payments | Payments | 6 | Stripe test-mode checkout completes and records only provider ID/status; payment persistence is normalized and provider-agnostic | Integration test and demonstration |
 | CSRF protection | Security I | 4, 8 | State-changing requests without valid CSRF protection are rejected | Security test |
 | XSS protection | Security I | 4, 8 | User-controlled content is safely rendered and XSS payload tests do not execute | Security test |
 | SQL injection protection | Security I | 5, 8 | Search/filter input cannot alter query semantics and sorting accepts only allow-listed fields | Parameterized repository query and catalogue service tests |

@@ -179,6 +179,17 @@ decision log before implementation continues.
 - Store only payment-provider identifiers and payment status.
 - Implement customer order history and admin order management.
 
+**Current implementation progress**
+
+- Cart creation and item changes enforce positive quantities and current stock.
+- Order creation calculates totals server-side, decrements stock transactionally,
+  preserves immutable product snapshots, supports idempotency keys, and clears the
+  cart after creation.
+- Customer order history and ownership checks are implemented and covered by focused
+  cart/order business-rule tests.
+- Stripe payment persistence and verified Checkout/webhook integration remain before
+  this phase can pass its exit gate.
+
 **Exit gate**
 
 - The complete checkout scenario works with Stripe test credentials.

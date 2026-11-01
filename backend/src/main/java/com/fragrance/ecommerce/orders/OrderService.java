@@ -1,0 +1,72 @@
+package com.fragrance.ecommerce.orders;
+
+import com.fragrance.ecommerce.domain.Cart;
+import com.fragrance.ecommerce.domain.Customer;
+import com.fragrance.ecommerce.domain.Order;
+import com.fragrance.ecommerce.domain.Product;
+import com.fragrance.ecommerce.exception.NotFoundException;
+import com.fragrance.ecommerce.repository.CartRepository;
+import com.fragrance.ecommerce.repository.OrderRepository;
+import com.fragrance.ecommerce.repository.ProductRepository;
+import com.fragrance.ecommerce.repository.UserRepository;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class OrderService {
+    private final CartRepository carts;
+    private final OrderRepository orders;
+    private final ProductRepository products;
+    private final UserRepository users;
+
+    public OrderService(CartRepository carts, OrderRepository orders,
+                        ProductRepository products, UserRepository users) {
+        this.carts = carts; this.orders = orders; this.products = products; this.users = users;
+    }
+    @Transactional
+    public Order create(UUID customerId, String idempotencyKey) {
+        var existing = orders.findByCustomerIdAndIdempotencyKey(customerId, idempotencyKey);
+        if (existing.isPresent()) return existing.get();
+        var cart = carts.findByCustomerId(customerId)
+            .orElseThrow(() -> new IllegalArgumentException("Cart is empty"));
+        if (cart.getItems().isEmpty()) throw new IllegalArgumentException("Cart is empty");
+        var total = BigDecimal.ZERO;
+        Map<UUID, Product> cartProducts = new HashMap<>();
+        for (var item : cart.getItems()) {
+            var product = products.findById(item.getProduct().getId())
+                .orElseThrow(() -> new NotFoundException("Product was not found"));
+            cartProducts.put(product.getId(), product);
+            if (!product.isActive() || product.getStockQuantity() < item.getQuantity()) {
+                throw new IllegalArgumentException("Insufficient stock");
+            }
+            total = total.add(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+        var user = users.findById(customerId)
+            .filter(Customer.class::isInstance)
+            .map(Customer.class::cast)
+            .orElseThrow(() -> new NotFoundException("Customer was not found"));
+        var order = new Order(user, idempotencyKey, total);
+        for (var item : cart.getItems()) {
+            var product = cartProducts.get(item.getProduct().getId());
+            product.decreaseStock(item.getQuantity());
+            order.addItem(product, item.getQuantity());
+        }
+        cart.clear();
+        return orders.save(order);
+    }
+    @Transactional(readOnly = true)
+    public Page<Order> history(UUID customerId, Pageable pageable) {
+        return orders.findByCustomerIdOrderByCreatedAtDesc(customerId, pageable);
+    }
+    @Transactional(readOnly = true)
+    public Order getOwned(UUID customerId, UUID orderId) {
+        return orders.findById(orderId).filter(order -> order.getCustomer().getId().equals(customerId))
+            .orElseThrow(() -> new NotFoundException("Order was not found"));
+    }
+}
