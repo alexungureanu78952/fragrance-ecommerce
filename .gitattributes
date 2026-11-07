@@ -1,0 +1,5 @@
+# Files executed or parsed inside Linux containers/CI must keep LF line endings.
+infra/** text eol=lf
+*.sh text eol=lf
+mvnw text eol=lf
+.htaccess text eol=lf
