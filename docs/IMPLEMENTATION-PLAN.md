@@ -336,8 +336,17 @@ decision log before implementation continues.
   `robots.txt` and `sitemap.xml`.
 - The backend writes its application log to `logs/fragrance-backend.log`
   (override with `LOGGING_FILE_NAME`).
-- Deployment, HTTPS, the public URL, the Lighthouse report, the Security Headers
-  Inspector report, and the demonstration rehearsal remain.
+- Hosting follows the rubric minimum: GitHub Pages publishes the static frontend
+  (`pages.yml`), and the full stack is demonstrated locally behind Apache
+  (`infra/apache`, `docker compose --profile demo`). Apache applies `.htaccess`
+  resource protection and security headers and proxies `/api` to Spring Boot on the
+  same origin. Verified locally: security headers present, protected paths return
+  403, and registration, login, session, CSRF, and 403 authorization work through
+  the proxy.
+- Audit log lines now include the actor and resource, and order creation and
+  checkout are audited.
+- The Lighthouse report, Security Headers Inspector screenshot, and demonstration
+  rehearsal remain.
 
 **Exit gate**
 

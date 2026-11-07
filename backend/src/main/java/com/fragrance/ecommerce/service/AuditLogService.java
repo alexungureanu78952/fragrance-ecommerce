@@ -24,7 +24,7 @@ public class AuditLogService {
                        String outcome, String requestId) {
         auditLogRepository.save(new AuditLog(
             actorUserId, action, resourceType, resourceId, outcome, requestId));
-        LOGGER.info("Audit event action={} resourceType={} outcome={} requestId={}",
-            action, resourceType, outcome, requestId);
+        LOGGER.info("Audit event actor={} action={} resourceType={} resourceId={} outcome={} detail={}",
+            actorUserId, action, resourceType, resourceId, outcome, requestId);
     }
 }

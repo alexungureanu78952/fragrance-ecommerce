@@ -1,6 +1,8 @@
 .env
 .env.*
 !.env.example
+!.env.demo
+!.env.pages
 
 backend/target/
 node_modules/

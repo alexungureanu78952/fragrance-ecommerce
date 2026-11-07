@@ -31,6 +31,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '..', 'VITE_')
   const siteUrl = (env.VITE_SITE_URL || 'http://localhost:5173').replace(/\/+$/, '')
   return {
+    // GitHub Pages serves the project from a subpath such as /fragrance-ecommerce/.
+    base: env.VITE_BASE_PATH || '/',
     plugins: [react(), siteFiles(siteUrl)],
     envDir: '..',
     test: {

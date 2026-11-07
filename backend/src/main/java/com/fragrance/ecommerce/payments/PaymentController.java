@@ -1,6 +1,7 @@
 package com.fragrance.ecommerce.payments;
 
 import com.fragrance.ecommerce.security.AuthenticatedUser;
+import com.fragrance.ecommerce.service.AuditLogService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
@@ -15,12 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/payments")
 public class PaymentController {
     private final PaymentService payments;
-    public PaymentController(PaymentService payments) { this.payments = payments; }
+    private final AuditLogService auditLogService;
+
+    public PaymentController(PaymentService payments, AuditLogService auditLogService) {
+        this.payments = payments;
+        this.auditLogService = auditLogService;
+    }
 
     @PostMapping("/checkout")
     public CheckoutResponse checkout(@AuthenticationPrincipal AuthenticatedUser user,
                                       @Valid @RequestBody CheckoutRequest request) {
         var session = payments.checkout(user.id(), request.orderId());
+        auditLogService.record(user.id(), "CHECKOUT", "ORDER", request.orderId().toString(), "SUCCESS", null);
         return new CheckoutResponse(session.providerPaymentId(), session.checkoutUrl());
     }
 

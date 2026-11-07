@@ -15,5 +15,17 @@ services:
       timeout: 5s
       retries: 10
 
+  # Demo web server: `npm run build:demo` in frontend/, then
+  # `docker compose --profile demo up -d`. Open http://localhost:8081.
+  web:
+    profiles: ["demo"]
+    build: ./infra/apache
+    ports:
+      - "8081:80"
+    volumes:
+      - ./frontend/dist:/usr/local/apache2/htdocs:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
 volumes:
   postgres-data:

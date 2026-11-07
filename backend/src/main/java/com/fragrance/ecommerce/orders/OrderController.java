@@ -33,7 +33,10 @@ public class OrderController {
     @PostMapping("/orders")
     public OrderDtos.OrderResponse create(@AuthenticationPrincipal AuthenticatedUser user,
                                           @Valid @RequestBody OrderDtos.CreateRequest request) {
-        return response(orderService.create(user.id(), request.idempotencyKey()));
+        var order = orderService.create(user.id(), request.idempotencyKey());
+        auditLogService.record(user.id(), "CREATE", "ORDER", order.getId().toString(), "SUCCESS",
+            "total=" + order.getTotal());
+        return response(order);
     }
 
     @GetMapping("/orders")

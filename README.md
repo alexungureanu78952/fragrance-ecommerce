@@ -43,8 +43,9 @@ local URL. If you change it, restart the Vite development server.
 
 `VITE_SITE_URL` is the public origin of the storefront (default
 `http://localhost:5173`). The build uses it for the canonical and Open Graph URLs
-and generates `robots.txt` and `sitemap.xml` from it, so set it to the deployed
-HTTPS origin before running `npm run build` for hosting.
+and generates `robots.txt` and `sitemap.xml` from it. The `build:demo` and
+`build:pages` scripts take their values from the committed, non-secret
+`.env.demo` and `.env.pages` files.
 
 ## Local demo accounts
 
@@ -77,3 +78,49 @@ stripe listen `
 
 Copy the `whsec_...` secret printed by the CLI into `STRIPE_WEBHOOK_SECRET` in
 `.env`, then restart the backend.
+
+## Hosting and demonstration
+
+The project uses two free setups:
+
+- **Online (GitHub Pages):** `.github/workflows/pages.yml` publishes the static
+  frontend to <https://alexungureanu78952.github.io/fragrance-ecommerce/> on every
+  push to `main` that changes the frontend. The backend is not hosted, so the
+  catalogue shows its error state there. Use this URL for the hosting criterion
+  and the Lighthouse SEO audit. One-time setup: in the repository, set
+  **Settings → Pages → Source** to **GitHub Actions**, and add the public hCaptcha
+  site key as the repository variable `VITE_CAPTCHA_SITE_KEY`.
+- **Live demo (Apache on your machine):** Apache serves the built frontend, applies
+  `frontend/public/.htaccess`, and proxies `/api` to Spring Boot, so the browser
+  sees a single origin at <http://localhost:8081>.
+
+### Demo-day checklist
+
+1. Start PostgreSQL and the backend as described in [Local setup](#local-setup).
+   For checkout, set these in `.env` before starting the backend:
+
+   ```text
+   STRIPE_SUCCESS_URL=http://localhost:8081/#/checkout/success
+   STRIPE_CANCEL_URL=http://localhost:8081/#/checkout/cancel
+   ```
+
+2. Build the demo frontend and start Apache:
+
+   ```text
+   cd frontend
+   npm run build:demo
+   cd ..
+   docker compose --profile demo up -d --build web
+   ```
+
+3. Start `stripe listen` (see above) and open <http://localhost:8081>.
+
+| Rubric criterion | How to show it |
+| --- | --- |
+| Hosting | Open the GitHub Pages URL |
+| SEO ≥ 90 | Chrome DevTools → Lighthouse → SEO on the GitHub Pages URL |
+| Security headers (A) | Security Headers Inspector on <http://localhost:8081> |
+| `.htaccess` | <http://localhost:8081/.env>, `/.htaccess`, `/assets/` all return 403 |
+| Logging | `backend/logs/fragrance-backend.log` — `Audit event actor=… action=…` lines for register, login, logout, orders, checkout, and admin changes |
+| Stripe | Checkout with card `4242 4242 4242 4242`; the order turns `PAID` after the webhook |
+| Unit tests and CI | GitHub Actions run of `CI`, with test-report artifacts |

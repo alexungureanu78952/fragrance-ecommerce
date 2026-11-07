@@ -107,8 +107,8 @@ card data is stored by this application.
 | Five unit tests | Testing | 9 | CI reports at least five meaningful business-rule unit tests | `backend-test-report` CI artifact (Surefire), `OrderServiceTest`, `CartServiceTest`, `AuthServiceTest`, `ProductServiceTest`, `PaymentServiceTest` |
 | Git versioning | Delivery | 0 | Repository has history with coherent commits | GitHub repository |
 | GitHub Actions CI/CD | Delivery | 0, 9 | Push and pull request workflow installs, lints/tests, and builds backend and frontend | Workflow run |
-| User activity logging | Operations | 4, 8, 10 | Authentication and product administration actions are persisted and written to a structured application log without secrets | `AuditLogService`, `logging.file.name` (`logs/fragrance-backend.log`); log sample pending |
-| Hosting | Deployment | 10 | Public URL serves the application | Deployment URL and smoke test |
+| User activity logging | Operations | 4, 8, 10 | Authentication and product administration actions are persisted and written to a structured application log without secrets | `AuditLogService` writes `Audit event actor=… action=…` lines for register, login, logout, order creation, checkout, and administrator changes to `logs/fragrance-backend.log` |
+| Hosting | Deployment | 10 | Public URL serves the application | GitHub Pages workflow (`pages.yml`); URL in README |
 | SEO | SEO | 10 | Lighthouse SEO score is at least 90/100 and required metadata is present | Metadata, Open Graph, structured data, generated `robots.txt`/`sitemap.xml`; Lighthouse report pending deployment |
 | Stripe payments | Payments | 6 | Stripe test-mode Checkout Session and signed webhook update order status while recording only provider ID/status; provider failure marks payment/order failed and releases reserved stock | `PaymentServiceTest`, `CheckoutFlowIntegrationTest`; live Stripe test-mode demonstration pending |
 | CSRF protection | Security I | 4, 8 | State-changing requests without valid CSRF protection are rejected | `AuthControllerIntegrationTest.stateChangingRequestsRequireCsrf`; browser registration/login verified with the configured `X-CSRF-TOKEN` header |
@@ -119,8 +119,8 @@ card data is stored by this application.
 | Rate limiting | Security II | 8 | More than 100 consecutive requests in under one minute are temporarily blocked | `RateLimitFilterTest`, HTTP 429 response |
 | CAPTCHA | Security II | 8 | Registration and login display hCaptcha, submit a token, and reject missing/invalid results through the configured server-side verifier | `CaptchaVerifier`, authentication tests, hCaptcha widget integration; live provider evidence pending |
 | Steganography risk reduction | Security II | 8 | Uploaded files undergo content decoding, metadata capture, and content hashing beyond filename validation | `ProductImageService`, upload security test |
-| Security headers | Security II | 8, 10 | CSP, frame, referrer, and permissions headers are emitted; Inspector grade remains to be captured | `SecurityConfig`, captured inspector report pending |
-| `.htaccess` resource protection | Security II | 8, 10 | Static hosting policy denies directory listing, dotfiles, logs, SQL, and configuration resources | `frontend/public/.htaccess`, deployment smoke test pending |
+| Security headers | Security II | 8, 10 | CSP, frame, referrer, and permissions headers are emitted; Inspector grade remains to be captured | `.htaccess` `Header` directives served by the Apache demo server (`infra/apache`), `SecurityConfig` for API responses; inspector screenshot pending |
+| `.htaccess` resource protection | Security II | 8, 10 | Static hosting policy denies directory listing, dotfiles, logs, SQL, and configuration resources | `frontend/public/.htaccess` served by Apache with `AllowOverride All`; `/.env`, `/.htaccess`, `/assets/`, `*.sql`, `*.properties` verified to return 403 |
 
 ## Phase 1 exit-gate checklist
 
