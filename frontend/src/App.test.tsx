@@ -4,15 +4,20 @@ import App from './App'
 import { api } from './api'
 
 vi.mock('./api', () => ({
+  onUnauthorized: vi.fn(),
   api: {
     products: vi.fn(),
     product: vi.fn(),
     me: vi.fn(),
     cart: vi.fn(),
+    addToCart: vi.fn(),
     brands: vi.fn(),
     categories: vi.fn(),
     adminOrders: vi.fn(),
     updateOrderStatus: vi.fn(),
+    cancelOrder: vi.fn(),
+    checkout: vi.fn(),
+    syncPayment: vi.fn(),
   },
 }))
 
@@ -120,5 +125,34 @@ describe('storefront', () => {
     await waitFor(() => expect(mockedApi.updateOrderStatus).toHaveBeenCalledWith('order-1234abcd', 'SHIPPED'))
     expect(await screen.findByRole('button', { name: 'Mark delivered' })).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('is now shipped')
+  })
+
+  it('returns to the untouched cart when the customer leaves Stripe without paying', async () => {
+    mockedApi.me.mockResolvedValue({ id: 'customer-1', email: 'ana@example.test', displayName: 'Ana', roles: ['CUSTOMER'] })
+    mockedApi.cart.mockResolvedValue({
+      items: [{ productId: 'product-1', productName: 'Dusk', unitPrice: 42, quantity: 2, lineTotal: 84 }], total: 84,
+    })
+    mockedApi.cancelOrder.mockResolvedValue({ id: 'order-1', status: 'CANCELED', total: 84, items: [] })
+    window.location.hash = '#/checkout/cancel/order-1'
+    render(<App />)
+    await waitFor(() => expect(mockedApi.cancelOrder).toHaveBeenCalledWith('order-1'))
+    await waitFor(() => expect(window.location.hash).toBe('#/cart'))
+    expect(await screen.findByText(/your cart is just as you left it/i)).toBeInTheDocument()
+    expect(await screen.findByText('Dusk')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /cancel order|complete payment|return items/i })).toBeNull()
+  })
+
+
+  it('sends signed-out visitors to sign in instead of failing to add to cart', async () => {
+    mockedApi.product.mockResolvedValue({
+      id: 'product-1', brandId: 'brand-1', brandName: 'Nocturne', categoryId: 'category-1',
+      categoryName: 'Woody', name: 'Dusk', description: 'Warm cedar and smoke.', price: 42, stockQuantity: 4,
+    })
+    window.location.hash = '#/product/product-1'
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: /sign in to add to cart/i }))
+    await waitFor(() => expect(window.location.hash).toBe('#/login'))
+    expect(mockedApi.addToCart).not.toHaveBeenCalled()
+    expect(await screen.findByText('Sign in to continue.')).toBeInTheDocument()
   })
 })

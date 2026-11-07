@@ -26,15 +26,21 @@ public class OrderService {
     private final OrderRepository orders;
     private final ProductRepository products;
     private final UserRepository users;
+    private final com.fragrance.ecommerce.payments.PaymentService payments;
 
     public OrderService(CartRepository carts, OrderRepository orders,
-                        ProductRepository products, UserRepository users) {
+                        ProductRepository products, UserRepository users,
+                        com.fragrance.ecommerce.payments.PaymentService payments) {
         this.carts = carts; this.orders = orders; this.products = products; this.users = users;
+        this.payments = payments;
     }
     @Transactional
     public Order create(UUID customerId, String idempotencyKey) {
         var existing = orders.findByCustomerIdAndIdempotencyKey(customerId, idempotencyKey);
         if (existing.isPresent()) return existing.get();
+        // A customer who left an earlier checkout unpaid (e.g. with the browser's back
+        // button) starts over: close it and release its stock before reserving again.
+        payments.abandonPendingOrders(customerId);
         var cart = carts.findByCustomerId(customerId)
             .orElseThrow(() -> new IllegalArgumentException("Cart is empty"));
         if (cart.getItems().isEmpty()) throw new IllegalArgumentException("Cart is empty");
@@ -59,7 +65,7 @@ public class OrderService {
             product.decreaseStock(item.getQuantity());
             order.addItem(product, item.getQuantity());
         }
-        cart.clear();
+        // The cart is left intact; purchased items leave it only once payment succeeds.
         return orders.save(order);
     }
     @Transactional(readOnly = true)

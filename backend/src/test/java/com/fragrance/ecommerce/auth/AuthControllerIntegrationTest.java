@@ -90,6 +90,20 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
+    void unauthenticatedApiCallsGet401SoTheClientCanAskForSignIn() throws Exception {
+        mockMvc.perform(get("/api/v1/orders"))
+            .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/cart"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void logoutSucceedsEvenWhenTheSessionHasAlreadyExpired() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/logout").with(csrf()))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
     void publicProductCollectionDoesNotRequireAuthentication() throws Exception {
         mockMvc.perform(get("/api/v1/products"))
             .andExpect(status().isOk())

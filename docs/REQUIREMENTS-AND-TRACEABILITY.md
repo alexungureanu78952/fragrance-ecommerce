@@ -11,7 +11,7 @@ be used in implementation or evidence.
 |---|---|---|
 | Guest | Unauthenticated visitor | Browse the public catalogue and product details; register or log in |
 | Customer | Authenticated shopper | Manage their cart, create orders, complete test payments, review their own order history, and submit reviews |
-| Administrator | Authenticated staff role | Manage products, brands, categories, stock, images, and orders; view relevant audit events |
+| Administrator | Authenticated staff role; also a customer | Everything a customer can do, plus manage products, brands, categories, stock, images, and orders; view relevant audit events |
 
 Authorization must be enforced by backend services and controllers, not only by
 frontend visibility.
@@ -98,7 +98,7 @@ card data is stored by this application.
 | At least one interface | Payments | 2, 6 | Payment service interface is defined and invoked by the checkout service | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), API design and unit tests |
 | Authentication | Authentication | 4 | Registration and login tests pass for valid and invalid credentials | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), `AuthServiceTest`, `AuthControllerIntegrationTest` |
 | Authorization | Access control | 4 | Customer access to administrator operations returns 403; ownership checks protect customer data | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), `AuthControllerIntegrationTest`, authorization tests |
-| Inheritance | Domain model | 2, 4 | `User` hierarchy intentionally models `Customer` and `Administrator` and is tested | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source, tests |
+| Inheritance | Domain model | 2, 4 | Three-level `User` → `Customer` → `Administrator` hierarchy (an administrator is a customer with extra rights) is tested | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source, tests |
 | Two exception types | Error handling | 4 | At least two domain/application exception types map to structured HTTP errors | Exception tests |
 | Image carousel | Frontend UX | 3, 7 | Product detail view provides button-controlled, keyboard-accessible image states | [UX and visual design](UX-AND-VISUAL-DESIGN.md), `App.test.tsx`, browser evidence pending |
 | Purposeful animation | Frontend UX | 3, 7 | Loading pulse and carousel transitions communicate state and respect reduced motion | [UX and visual design](UX-AND-VISUAL-DESIGN.md), CSS, browser evidence pending |

@@ -60,6 +60,11 @@ public class User {
         this.roles.add(role);
     }
 
+    protected void grantRole(Role role) {
+        this.roles.add(role);
+        this.updatedAt = Instant.now();
+    }
+
     public UUID getId() {
         return id;
     }

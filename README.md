@@ -103,7 +103,7 @@ These fake accounts are created by the demo seed for local testing only:
 | Role | Email | Password |
 | --- | --- | --- |
 | Customer | `demo.customer@example.test` | `DemoCustomer!2026` |
-| Administrator | `demo.admin@example.test` | `DemoAdmin!2026` |
+| Administrator (also a customer: can shop and order) | `demo.admin@example.test` | `DemoAdmin!2026` |
 
 Do not reuse these credentials outside the local educational environment.
 

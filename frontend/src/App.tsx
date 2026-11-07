@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import HCaptcha from '@hcaptcha/react-hcaptcha'
-import { api } from './api'
+import { api, onUnauthorized } from './api'
 import type { AdminOrder, Cart, Order, Product, Reference, User } from './api'
 import './App.css'
 
 type Route = { page: 'catalog' | 'product' | 'cart' | 'login' | 'account' | 'admin' | 'payment-success' | 'payment-cancel'; id?: string }
 
 function route(): Route {
-  const [path, id] = window.location.hash.replace(/^#\/?/, '').split('/')
+  const [path, id, extra] = window.location.hash.replace(/^#\/?/, '').split('/')
   if (path === 'product' && id) return { page: 'product', id }
   if (path === 'cart') return { page: 'cart' }
   if (path === 'login') return { page: 'login' }
   if (path === 'account') return { page: 'account' }
   if (path === 'admin') return { page: 'admin' }
-  if (path === 'checkout' && id === 'success') return { page: 'payment-success' }
-  if (path === 'checkout' && id === 'cancel') return { page: 'payment-cancel' }
+  if (path === 'checkout' && id === 'success') return { page: 'payment-success', id: extra }
+  if (path === 'checkout' && id === 'cancel') return { page: 'payment-cancel', id: extra }
   return { page: 'catalog' }
 }
 
@@ -172,6 +172,14 @@ function ProductVisual({ product, active = 0, onChange }: { product: Product; ac
   </div>
 }
 
+// Smoothly scrolls to the collection without touching the hash (the hash holds the route).
+function scrollToCollection() {
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const target = document.getElementById('collection')
+  target?.scrollIntoView?.({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  target?.focus({ preventScroll: true })
+}
+
 function Catalog({ onOpen }: { onOpen: (id: string) => void }) {
   usePageMeta('', 'Shop small-batch botanical and mineral fragrances from Nocturne. Explore woody, floral, and amber compositions.')
   const [search, setSearch] = useState('')
@@ -193,29 +201,36 @@ function Catalog({ onOpen }: { onOpen: (id: string) => void }) {
       <p className="eyebrow">THE SCENT EDIT · 2026</p>
       <h1>Quiet luxury,<br /><em>distilled.</em></h1>
       <p className="hero-copy">Small-batch fragrances for the spaces between moments. Explore our considered collection of botanical and mineral compositions.</p>
-      <a className="button" href="#collection">Explore collection <span>↓</span></a>
+      <button className="button" onClick={scrollToCollection}>Explore collection <span>↓</span></button>
     </section>
-    <section id="collection" className="collection-section">
+    <section id="collection" className="collection-section" tabIndex={-1}>
       <div className="section-heading"><div><p className="eyebrow">THE COLLECTION</p><h2>Find your signature</h2></div>
         <label className="search"><span className="sr-only">Search fragrances</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search scents" /></label>
       </div>
       {loading && <p className="state">Loading the collection<span className="pulse">...</span></p>}
       {error && <div className="state error-state"><strong>We could not load the collection.</strong><span>{error}</span><button className="button secondary" onClick={() => setAttempt(attempt + 1)}>Try again</button></div>}
       {!loading && !error && products.length === 0 && <p className="state">No fragrances match that search.</p>}
-      <div className="product-grid">{products.map((product) => <article className="product-card" key={product.id}>
+      <div className="product-grid">{products.map((product, index) => <article className="product-card" key={product.id} style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}>
         <button className="card-link" onClick={() => onOpen(product.id)}><ProductVisual product={product} /><div className="card-copy"><p className="eyebrow">{product.brandName} · {product.categoryName}</p><h3>{product.name}</h3><span>{money(product.price)}</span></div></button>
       </article>)}</div>
     </section>
   </main>
 }
 
-function ProductDetails({ id, onAdded }: { id: string; onAdded: () => void }) {
+function ProductDetails({ id, user, onAdded, onRequireLogin }: { id: string; user: User | null; onAdded: () => void; onRequireLogin: () => void }) {
   const [product, setProduct] = useState<Product | null>(null)
   usePageMeta(product?.name ?? 'Fragrance', product ? `${product.name} by ${product.brandName}: ${product.description}`.slice(0, 160) : undefined)
   useProductStructuredData(product)
   const [active, setActive] = useState(0)
   const [error, setError] = useState('')
+  const [addError, setAddError] = useState('')
   const [message, setMessage] = useState('')
+  const addToCart = (product: Product) => {
+    if (!user) { onRequireLogin(); return }
+    setAddError('')
+    setMessage('')
+    api.addToCart(product.id, 1).then(() => { setMessage('Added to your cart'); onAdded() }).catch((reason: Error) => setAddError(reason.message))
+  }
   // The parent keys this component by product id, so each product starts with fresh state.
   useEffect(() => {
     let active = true
@@ -224,38 +239,97 @@ function ProductDetails({ id, onAdded }: { id: string; onAdded: () => void }) {
   }, [id])
   if (error) return <div className="state error-state"><strong>Product unavailable</strong><span>{error}</span></div>
   if (!product) return <p className="state">Loading product<span className="pulse">...</span></p>
-  return <main className="detail-layout"><ProductVisual product={product} active={active} onChange={setActive} /><section className="detail-copy"><p className="eyebrow">{product.brandName} · {product.categoryName}</p><h1>{product.name}</h1><p className="detail-price">{money(product.price)}</p><p>{product.description}</p><p className="stock">{product.stockQuantity > 0 ? `${product.stockQuantity} available` : 'Currently out of stock'}</p><button className="button" disabled={!product.stockQuantity} onClick={() => api.addToCart(product.id, 1).then(() => { setMessage('Added to your cart'); onAdded() }).catch((reason: Error) => setError(reason.message))}>Add to cart <span>↗</span></button>{message && <p className="success-message" role="status">{message}</p>}{error && <p className="error-text" role="alert">{error}</p>}<a className="back-link" href="#/">← Back to collection</a></section></main>
+  return <main className="detail-layout"><ProductVisual product={product} active={active} onChange={setActive} /><section className="detail-copy"><p className="eyebrow">{product.brandName} · {product.categoryName}</p><h1>{product.name}</h1><p className="detail-price">{money(product.price)}</p><p>{product.description}</p><p className="stock">{product.stockQuantity > 0 ? `${product.stockQuantity} available` : 'Currently out of stock'}</p><button className="button" disabled={!product.stockQuantity} onClick={() => addToCart(product)}>{user ? 'Add to cart' : 'Sign in to add to cart'} <span>↗</span></button>{message && <p className="success-message" role="status">{message}</p>}{addError && <p className="error-text" role="alert">{addError}</p>}<a className="back-link" href="#/">← Back to collection</a></section></main>
 }
 
-function CartPage({ cart, onChange, user }: { cart: Cart | null; onChange: () => void; user: User | null }) {
+function CartPage({ cart, onChange, user, onRequireLogin }: { cart: Cart | null; onChange: () => void; user: User | null; onRequireLogin: () => void }) {
   usePageMeta('Shopping cart')
   const [error, setError] = useState('')
+  const [notice] = useState(takeCartNotice)
   const [checkingOut, setCheckingOut] = useState(false)
-  if (!user) return <div className="state error-state"><strong>Sign in to view your cart.</strong><a className="button" href="#/login">Sign in</a></div>
+  if (!user) return <div className="state error-state"><strong>Sign in to view your cart.</strong><button className="button" onClick={onRequireLogin}>Sign in</button></div>
   if (!cart) return <p className="state">Loading your cart<span className="pulse">...</span></p>
   const checkout = () => {
     setCheckingOut(true)
     setError('')
     api.createOrder(crypto.randomUUID()).then((order) => api.checkout(order.id)).then((session) => { window.location.href = session.checkoutUrl }).catch((reason: Error) => { setError(reason.message); onChange() }).finally(() => setCheckingOut(false))
   }
-  return <main className="cart-layout"><section><p className="eyebrow">YOUR SELECTION</p><h1>Shopping cart</h1>{cart.items.length === 0 ? <p className="state">Your cart is waiting for a fragrance.</p> : cart.items.map((item) => <div className="cart-item" key={item.productId}><ProductVisual product={{ id: item.productId, brandId: '', brandName: '', categoryId: '', categoryName: '', name: item.productName, description: '', price: item.unitPrice, stockQuantity: 1 }} /><div><h3>{item.productName}</h3><p>{money(item.unitPrice)}</p><label>Quantity <input type="number" min="1" value={item.quantity} onChange={(event) => api.updateCart(item.productId, Number(event.target.value)).then(onChange)} /></label><button className="text-button" onClick={() => api.removeFromCart(item.productId).then(onChange)}>Remove</button></div><strong>{money(item.lineTotal)}</strong></div>)}</section>{cart.items.length > 0 && <aside className="summary"><p className="eyebrow">ORDER SUMMARY</p><div><span>Total</span><strong>{money(cart.total)}</strong></div><p>Payment is completed securely in Stripe test mode.</p>{error && <p className="error-text" role="alert">{error}</p>}<button className="button" disabled={checkingOut} onClick={checkout}>{checkingOut ? 'Preparing checkout...' : 'Proceed to checkout'} <span>↗</span></button></aside>}</main>
+  return <main className="cart-layout"><section><p className="eyebrow">YOUR SELECTION</p><h1>Shopping cart</h1>{notice && <p className="notice" role="status">{notice}</p>}{cart.items.length === 0 ? <p className="state">Your cart is waiting for a fragrance.</p> : cart.items.map((item) => <div className="cart-item" key={item.productId}><ProductVisual product={{ id: item.productId, brandId: '', brandName: '', categoryId: '', categoryName: '', name: item.productName, description: '', price: item.unitPrice, stockQuantity: 1 }} /><div><h3>{item.productName}</h3><p>{money(item.unitPrice)}</p><label>Quantity <input type="number" min="1" value={item.quantity} onChange={(event) => api.updateCart(item.productId, Number(event.target.value)).then(onChange)} /></label><button className="text-button" onClick={() => api.removeFromCart(item.productId).then(onChange)}>Remove</button></div><strong>{money(item.lineTotal)}</strong></div>)}</section>{cart.items.length > 0 && <aside className="summary"><p className="eyebrow">ORDER SUMMARY</p><div><span>Total</span><strong>{money(cart.total)}</strong></div><p>Payment is completed securely in Stripe test mode.</p>{error && <p className="error-text" role="alert">{error}</p>}<button className="button" disabled={checkingOut} onClick={checkout}>{checkingOut ? 'Preparing checkout...' : 'Proceed to checkout'} <span>↗</span></button></aside>}</main>
 }
 
-function PaymentResult({ canceled = false }: { canceled?: boolean }) {
+// A one-off message shown on the cart page after returning from an unpaid checkout.
+let pendingCartNotice = ''
+function takeCartNotice() {
+  const notice = pendingCartNotice
+  pendingCartNotice = ''
+  return notice
+}
+
+const ALREADY_PAID = 'This order has already been paid'
+
+function PaymentResult({ canceled = false, orderId, onCartChanged }: { canceled?: boolean; orderId?: string; onCartChanged?: () => void }) {
   usePageMeta(canceled ? 'Checkout canceled' : 'Order confirmed')
-  return <main className="state payment-result"><p className="eyebrow">{canceled ? 'CHECKOUT CANCELED' : 'PAYMENT RECEIVED'}</p><h1>{canceled ? 'Your selection is still here.' : 'Thank you for your order.'}</h1><p>{canceled ? 'No payment was taken. You can return to your cart whenever you are ready.' : 'Stripe will confirm the payment and your order status will update shortly.'}</p><div><a className="button" href={canceled ? '#/cart' : '#/account'}>{canceled ? 'Return to cart' : 'View order history'} <span>↗</span></a><a className="back-link" href="#/">Continue browsing</a></div></main>
+  const [error, setError] = useState('')
+  const [confirmed, setConfirmed] = useState<'checking' | 'paid' | 'pending'>(orderId ? 'checking' : 'pending')
+  useEffect(() => {
+    let active = true
+    if (canceled) {
+      // Leaving Stripe without paying: release the reservation and go back to the
+      // untouched cart. Nothing for the customer to decide.
+      const backToCart = () => {
+        pendingCartNotice = 'Checkout canceled. No payment was taken, and your cart is just as you left it.'
+        window.location.hash = '#/cart'
+      }
+      if (!orderId) { backToCart(); return }
+      api.cancelOrder(orderId)
+        .then(() => { if (active) backToCart() })
+        .catch((reason: Error) => {
+          if (!active) return
+          if (reason.message === ALREADY_PAID) window.location.hash = `#/checkout/success/${orderId}`
+          else setError(reason.message)
+        })
+    } else if (orderId) {
+      // On return from Stripe, confirm the payment directly instead of waiting for the webhook.
+      api.syncPayment(orderId)
+        .then((order) => { if (active) { setConfirmed(order.status === 'PAID' ? 'paid' : 'pending'); onCartChanged?.() } })
+        .catch(() => { if (active) setConfirmed('pending') })
+    }
+    return () => { active = false }
+    // onCartChanged is a fresh closure on every render; run once per order.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canceled, orderId])
+  if (!canceled) return <main className="state payment-result"><p className="eyebrow">{confirmed === 'paid' ? 'PAYMENT CONFIRMED' : 'PAYMENT RECEIVED'}</p><h1>Thank you for your order.</h1><p role="status">{confirmed === 'checking' ? 'Confirming your payment with Stripe…' : confirmed === 'paid' ? 'Your payment is confirmed and your order is being prepared.' : 'Stripe will confirm the payment and your order status will update shortly.'}</p><div><a className="button" href="#/account">View order history <span>↗</span></a><a className="back-link" href="#/">Continue browsing</a></div></main>
+  if (!error) return <p className="state">Returning to your cart<span className="pulse">...</span></p>
+  return <main className="state payment-result"><p className="eyebrow">CHECKOUT CANCELED</p><h1>No payment was taken.</h1><p className="error-text" role="alert">{error}</p><div><a className="button" href="#/cart">Back to cart <span>↗</span></a></div></main>
 }
 
-function Account({ user }: { user: User | null }) {
+// Loads order history, first confirming any pending orders with Stripe so a missed
+// webhook never leaves a paid order shown as pending.
+async function loadOrders(): Promise<Order[]> {
+  let page = await api.orders()
+  const pending = page.items.filter((order) => order.status === 'PENDING_PAYMENT')
+  if (pending.length > 0) {
+    await Promise.allSettled(pending.map((order) => api.syncPayment(order.id)))
+    page = await api.orders()
+  }
+  return page.items
+}
+
+function Account({ user, onRequireLogin }: { user: User | null; onRequireLogin: () => void }) {
   usePageMeta('Your account')
   const [orders, setOrders] = useState<Order[]>([])
   const [error, setError] = useState('')
-  useEffect(() => { if (user) api.orders().then((page) => setOrders(page.items)).catch((reason: Error) => setError(reason.message)) }, [user])
-  if (!user) return <main className="state error-state"><strong>Sign in to view your account.</strong><a className="button" href="#/login">Sign in</a></main>
-  return <main className="account-layout"><div><p className="eyebrow">YOUR ACCOUNT</p><h1>Hello, {user.displayName}.</h1><p className="muted">{user.email}</p></div><section><div className="section-heading"><div><p className="eyebrow">ORDER HISTORY</p><h2>Your orders</h2></div></div>{error && <p className="error-text" role="alert">{error}</p>}{!error && orders.length === 0 && <p className="state">Your completed orders will appear here.</p>}{orders.map((order) => <article className="order-card" key={order.id}><div><strong>Order {order.id.slice(0, 8)}</strong><span>{order.status.replace('_', ' ')}</span></div><strong>{money(order.total)}</strong><ul>{order.items.map((item) => <li key={`${order.id}-${item.productName}`}>{item.quantity} × {item.productName}</li>)}</ul></article>)}</section></main>
+  useEffect(() => { if (user) loadOrders().then(setOrders).catch((reason: Error) => setError(reason.message)) }, [user])
+  if (!user) return <main className="state error-state"><strong>Sign in to view your account.</strong><button className="button" onClick={onRequireLogin}>Sign in</button></main>
+  return <main className="account-layout"><div><p className="eyebrow">YOUR ACCOUNT</p><h1>Hello, {user.displayName}.</h1><p className="muted">{user.email}</p></div><section><div className="section-heading"><div><p className="eyebrow">ORDER HISTORY</p><h2>Your orders</h2></div></div>{error && <p className="error-text" role="alert">{error}</p>}{!error && orders.length === 0 && <p className="state">Your orders will appear here.</p>}{orders.map((order) => <article className="order-card" key={order.id}><div><strong>Order {order.id.slice(0, 8)}</strong><span>{ORDER_STATUS_LABELS[order.status] ?? order.status.replaceAll('_', ' ').toLowerCase()}</span></div><strong>{money(order.total)}</strong><ul>{order.items.map((item) => <li key={`${order.id}-${item.productName}`}>{item.quantity} × {item.productName}</li>)}</ul></article>)}</section></main>
 }
 
-function Login({ onLogin }: { onLogin: (user: User) => void }) {
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  PENDING_PAYMENT: 'awaiting payment', PAID: 'paid', SHIPPED: 'shipped', DELIVERED: 'delivered',
+  PAYMENT_FAILED: 'payment failed', CANCELED: 'canceled',
+}
+
+function Login({ onLogin, notice }: { onLogin: (user: User) => void; notice?: string }) {
   usePageMeta('Sign in')
   const [registering, setRegistering] = useState(false)
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
@@ -275,19 +349,33 @@ function Login({ onLogin }: { onLogin: (user: User) => void }) {
     action.then(onLogin).catch((reason: Error) => setError(reason.message))
   }
   const switchMode = () => { setRegistering(!registering); setCaptchaToken(''); setError('') }
-  return <main className="auth-layout"><div><p className="eyebrow">{registering ? 'JOIN THE EDIT' : 'WELCOME BACK'}</p><h1>{registering ? 'Create your account.' : 'Enter quietly.'}</h1><p>{registering ? 'Save your selections and follow your orders.' : 'Sign in to continue your fragrance journey.'}</p></div><form className="auth-form" onSubmit={submit}>{registering && <label>Display name<input required value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} /></label>}<label>Email<input type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label><label>Password<input type="password" required value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>{captchaSiteKey ? <HCaptcha sitekey={captchaSiteKey} onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} onError={() => setError('CAPTCHA could not load. Try again.')} /> : <p className="error-text" role="alert">CAPTCHA is not configured.</p>}{error && <p className="error-text" role="alert">{error}</p>}<button className="button" disabled={!captchaSiteKey || !captchaToken}>{registering ? 'Create account' : 'Sign in'} <span>↗</span></button><button type="button" className="text-button" onClick={switchMode}>{registering ? 'Already have an account? Sign in' : 'New here? Create an account'}</button></form></main>
+  return <main className="auth-layout"><div><p className="eyebrow">{registering ? 'JOIN THE EDIT' : 'WELCOME BACK'}</p><h1>{registering ? 'Create your account.' : 'Enter quietly.'}</h1><p>{registering ? 'Save your selections and follow your orders.' : 'Sign in to continue your fragrance journey.'}</p></div><form className="auth-form" onSubmit={submit}>{notice && <p className="notice" role="status">{notice}</p>}{registering && <label>Display name<input required value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} /></label>}<label>Email<input type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label><label>Password<input type="password" required value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>{captchaSiteKey ? <HCaptcha sitekey={captchaSiteKey} onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} onError={() => setError('CAPTCHA could not load. Try again.')} /> : <p className="error-text" role="alert">CAPTCHA is not configured.</p>}{error && <p className="error-text" role="alert">{error}</p>}<button className="button" disabled={!captchaSiteKey || !captchaToken}>{registering ? 'Create account' : 'Sign in'} <span>↗</span></button><button type="button" className="text-button" onClick={switchMode}>{registering ? 'Already have an account? Sign in' : 'New here? Create an account'}</button></form></main>
 }
 
 function App() {
   const [current, setCurrent] = useState(route())
   const [user, setUser] = useState<User | null>(null)
   const [cart, setCart] = useState<Cart | null>(null)
+  const [returnTo, setReturnTo] = useState<string | null>(null)
+  // Remember where the visitor was, then send them to sign in (also used on any 401).
+  const requireLogin = () => {
+    const here = window.location.hash
+    setReturnTo(here && !here.startsWith('#/login') ? here : '#/')
+    setUser(null)
+    setCart(null)
+    window.location.hash = '#/login'
+  }
+  useEffect(() => {
+    onUnauthorized(requireLogin)
+    return () => onUnauthorized(null)
+  })
   useEffect(() => { const changed = () => setCurrent(route()); window.addEventListener('hashchange', changed); api.me().then(setUser).catch(() => setUser(null)); return () => window.removeEventListener('hashchange', changed) }, [])
   useEffect(() => { if (user) api.cart().then(setCart).catch(() => setCart(null)) }, [user])
   const refreshCart = () => { if (user) api.cart().then(setCart) }
-  const logout = () => api.logout().then(() => { setUser(null); setCart(null) }).then(() => { window.location.hash = '#/' })
+  // Clear the local session even if the server call fails (e.g. the session already expired).
+  const logout = () => api.logout().catch(() => undefined).finally(() => { setUser(null); setCart(null); window.location.hash = '#/' })
   const visibleCart = user ? cart : null
-  return <><Header user={user} cartCount={visibleCart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0} onLogout={logout} /><div className="page">{current.page === 'catalog' && <Catalog onOpen={(id) => { window.location.hash = `#/product/${id}` }} />}{current.page === 'product' && current.id && <ProductDetails key={current.id} id={current.id} onAdded={refreshCart} />}{current.page === 'cart' && <CartPage cart={visibleCart} onChange={refreshCart} user={user} />}{current.page === 'login' && <Login onLogin={(next) => { setUser(next); window.location.hash = '#/' }} />}{current.page === 'account' && <Account user={user} />}{current.page === 'admin' && <Admin user={user} />}{current.page === 'payment-success' && <PaymentResult />}{current.page === 'payment-cancel' && <PaymentResult canceled />}</div><footer><span>NOCTURNE FRAGRANCE</span><span>Educational shop · Stripe test mode only</span></footer></>
+  return <><Header user={user} cartCount={visibleCart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0} onLogout={logout} /><div className="page">{current.page === 'catalog' && <Catalog onOpen={(id) => { window.location.hash = `#/product/${id}` }} />}{current.page === 'product' && current.id && <ProductDetails key={current.id} id={current.id} user={user} onAdded={refreshCart} onRequireLogin={requireLogin} />}{current.page === 'cart' && <CartPage cart={visibleCart} onChange={refreshCart} user={user} onRequireLogin={requireLogin} />}{current.page === 'login' && <Login notice={returnTo ? 'Sign in to continue.' : undefined} onLogin={(next) => { setUser(next); window.location.hash = returnTo ?? '#/'; setReturnTo(null) }} />}{current.page === 'account' && <Account user={user} onRequireLogin={requireLogin} />}{current.page === 'admin' && <Admin user={user} />}{current.page === 'payment-success' && <PaymentResult orderId={current.id} onCartChanged={refreshCart} />}{current.page === 'payment-cancel' && <PaymentResult canceled orderId={current.id} onCartChanged={refreshCart} />}</div><footer><span>NOCTURNE FRAGRANCE</span><span>Educational shop · Stripe test mode only</span></footer></>
 }
 
 export default App

@@ -84,27 +84,47 @@ export type Reference = { id: string; name: string; description: string }
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1'
 
+/** Raised when the API answers 401: the visitor is not (or no longer) signed in. */
+export class UnauthorizedError extends Error {}
+
+let unauthorizedHandler: (() => void) | null = null
+/** Registers what the app does when a request needs a signed-in user (e.g. go to sign-in). */
+export function onUnauthorized(handler: (() => void) | null) {
+  unauthorizedHandler = handler
+}
+
+function unavailableMessage(status: number) {
+  return status >= 502 && status <= 504
+    ? 'The server is starting or unavailable. Please try again in a moment.'
+    : `Request failed (${status})`
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Content-Type', 'application/json')
   if (init.method && init.method !== 'GET') {
     const csrf = await fetch(`${API_URL}/auth/csrf`, { credentials: 'include' })
-    if (csrf.ok) {
-      const token = await csrf.json() as { token?: string; headerName?: string }
-      if (!token.token || !token.headerName) {
-        throw new Error('CSRF token response was invalid')
-      }
-      headers.set(token.headerName, token.token)
+    if (!csrf.ok) throw new Error(unavailableMessage(csrf.status))
+    const token = await csrf.json() as { token?: string; headerName?: string }
+    if (!token.token || !token.headerName) {
+      throw new Error('CSRF token response was invalid')
     }
+    headers.set(token.headerName, token.token)
   }
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     headers,
     credentials: 'include',
   })
+  if (response.status === 401) {
+    // Session checks and failed sign-ins are handled by their callers.
+    if (path !== '/auth/me' && path !== '/auth/login') unauthorizedHandler?.()
+    const body = await response.json().catch(() => ({})) as { detail?: string }
+    throw new UnauthorizedError(body.detail ?? 'Please sign in to continue.')
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => ({})) as { detail?: string }
-    throw new Error(body.detail ?? `Request failed (${response.status})`)
+    throw new Error(body.detail ?? unavailableMessage(response.status))
   }
   if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
@@ -133,6 +153,12 @@ export const api = {
     method: 'POST', body: JSON.stringify({ idempotencyKey }),
   }),
   checkout: (orderId: string) => request<{ providerSessionId: string; checkoutUrl: string }>('/payments/checkout', {
+    method: 'POST', body: JSON.stringify({ orderId }),
+  }),
+  syncPayment: (orderId: string) => request<Order>('/payments/sync', {
+    method: 'POST', body: JSON.stringify({ orderId }),
+  }),
+  cancelOrder: (orderId: string) => request<Order>('/payments/cancel', {
     method: 'POST', body: JSON.stringify({ orderId }),
   }),
   orders: () => request<OrderPage>('/orders?size=20'),

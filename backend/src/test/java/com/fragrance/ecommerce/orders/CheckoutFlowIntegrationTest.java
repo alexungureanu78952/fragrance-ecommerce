@@ -72,8 +72,10 @@ class CheckoutFlowIntegrationTest {
         product = products.save(new Product(brand, category, "Smoke Dusk " + suffix,
             "Warm cedar and smoke.", new BigDecimal("42.00"), 5));
         adminEmail = "admin-" + suffix + "@example.test";
+        var customerRole = roles.findByCode("CUSTOMER").orElseThrow();
         var adminRole = roles.findByCode("ADMINISTRATOR").orElseThrow();
-        users.save(new Administrator(adminEmail, passwordEncoder.encode(PASSWORD), "Smoke Admin", adminRole));
+        users.save(new Administrator(adminEmail, passwordEncoder.encode(PASSWORD), "Smoke Admin",
+            customerRole, adminRole));
     }
 
     @Test
@@ -113,6 +115,9 @@ class CheckoutFlowIntegrationTest {
         mockMvc.perform(get("/api/v1/orders/" + orderId).session(customer))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("PAID"));
+        // Only a successful payment removes the purchased items from the cart.
+        mockMvc.perform(get("/api/v1/cart").session(customer))
+            .andExpect(jsonPath("$.items").isEmpty());
 
         mockMvc.perform(patch("/api/v1/admin/orders/" + orderId + "/status").session(customer).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("status", "SHIPPED"))))
@@ -161,6 +166,99 @@ class CheckoutFlowIntegrationTest {
         mockMvc.perform(get("/api/v1/orders/" + orderId).session(customer))
             .andExpect(jsonPath("$.status").value("PAYMENT_FAILED"));
         assertThat(products.findById(product.getId()).orElseThrow().getStockQuantity()).isEqualTo(5);
+    }
+
+    @Test
+    void leavingStripeWithoutPayingKeepsTheCartAndReleasesStock() throws Exception {
+        var customer = registerAndLogin("cancel-" + UUID.randomUUID() + "@example.test");
+        mockMvc.perform(post("/api/v1/cart/items").session(customer).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("productId", product.getId(), "quantity", 2))))
+            .andExpect(status().is2xxSuccessful());
+        var orderJson = mockMvc.perform(post("/api/v1/orders").session(customer).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("idempotencyKey", UUID.randomUUID().toString()))))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        var orderId = objectMapper.readTree(orderJson).get("id").asText();
+        when(paymentProvider.createCheckout(any(), any()))
+            .thenReturn(new PaymentProvider.CheckoutSession("cs_test_cancel", "https://checkout.example.test/cs_test_cancel"));
+        mockMvc.perform(post("/api/v1/payments/checkout").session(customer).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("orderId", orderId))))
+            .andExpect(status().isOk());
+        // Starting checkout reserves stock but does not touch the cart.
+        mockMvc.perform(get("/api/v1/cart").session(customer))
+            .andExpect(jsonPath("$.items[0].quantity").value(2));
+        assertThat(products.findById(product.getId()).orElseThrow().getStockQuantity()).isEqualTo(3);
+
+        when(paymentProvider.checkoutState("cs_test_cancel")).thenReturn(PaymentProvider.CheckoutState.OPEN);
+        mockMvc.perform(post("/api/v1/payments/cancel").session(customer).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("orderId", orderId))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("CANCELED"));
+        org.mockito.Mockito.verify(paymentProvider).expireCheckout("cs_test_cancel");
+
+        mockMvc.perform(get("/api/v1/cart").session(customer))
+            .andExpect(jsonPath("$.items[0].quantity").value(2));
+        assertThat(products.findById(product.getId()).orElseThrow().getStockQuantity()).isEqualTo(5);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .delete("/api/v1/cart/items/" + product.getId()).session(customer).with(csrf()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items").isEmpty());
+        mockMvc.perform(post("/api/v1/payments/cancel").session(customer).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("orderId", orderId))))
+            .andExpect(status().isConflict());
+    }
+
+    @Test
+    void administratorsCanShopAndPlaceOrdersLikeCustomers() throws Exception {
+        var admin = login(adminEmail);
+        mockMvc.perform(get("/api/v1/auth/me").session(admin))
+            .andExpect(jsonPath("$.roles", org.hamcrest.Matchers.containsInAnyOrder("CUSTOMER", "ADMINISTRATOR")));
+        mockMvc.perform(post("/api/v1/cart/items").session(admin).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("productId", product.getId(), "quantity", 1))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].quantity").value(1));
+        mockMvc.perform(post("/api/v1/orders").session(admin).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("idempotencyKey", UUID.randomUUID().toString()))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("PENDING_PAYMENT"));
+        mockMvc.perform(get("/api/v1/orders").session(admin))
+            .andExpect(jsonPath("$.totalItems").value(1));
+    }
+
+    @Test
+    void goingBackFromStripeAndCheckingOutAgainDoesNotReserveStockTwice() throws Exception {
+        var customer = registerAndLogin("back-" + UUID.randomUUID() + "@example.test");
+        mockMvc.perform(post("/api/v1/cart/items").session(customer).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("productId", product.getId(), "quantity", 2))))
+            .andExpect(status().is2xxSuccessful());
+        when(paymentProvider.createCheckout(any(), any()))
+            .thenReturn(new PaymentProvider.CheckoutSession("cs_test_first", "https://checkout.example.test/first"));
+        var first = objectMapper.readTree(mockMvc.perform(post("/api/v1/orders").session(customer).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("idempotencyKey", UUID.randomUUID().toString()))))
+            .andReturn().getResponse().getContentAsString()).get("id").asText();
+        mockMvc.perform(post("/api/v1/payments/checkout").session(customer).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("orderId", first))))
+            .andExpect(status().isOk());
+
+        // Browser back from Stripe, then "Proceed to checkout" again.
+        when(paymentProvider.checkoutState("cs_test_first")).thenReturn(PaymentProvider.CheckoutState.OPEN);
+        mockMvc.perform(post("/api/v1/orders").session(customer).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("idempotencyKey", UUID.randomUUID().toString()))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("PENDING_PAYMENT"));
+
+        org.mockito.Mockito.verify(paymentProvider).expireCheckout("cs_test_first");
+        mockMvc.perform(get("/api/v1/orders/" + first).session(customer))
+            .andExpect(jsonPath("$.status").value("CANCELED"));
+        assertThat(products.findById(product.getId()).orElseThrow().getStockQuantity()).isEqualTo(3);
     }
 
     private MockHttpSession registerAndLogin(String email) throws Exception {

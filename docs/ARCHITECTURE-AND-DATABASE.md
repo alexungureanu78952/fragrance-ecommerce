@@ -10,7 +10,7 @@ endpoints, or security behavior.
 |---|---|
 | Backend | Spring Boot 3, Spring MVC, Spring Data JPA, Spring Security |
 | Authentication | Server-side session with an HttpOnly cookie |
-| User inheritance | JPA `JOINED` strategy for `User`, `Customer`, and `Administrator` |
+| User inheritance | JPA `JOINED` strategy: `User` → `Customer` → `Administrator`. An administrator is a customer with extra rights, so they can also shop and order |
 | Database | PostgreSQL with Flyway migrations |
 | Image storage | Validated local filesystem files; database stores metadata and relative paths |
 | Payments | Stripe Checkout Session in test mode; verified webhook finalizes payment |
@@ -48,7 +48,7 @@ state.
 ```mermaid
 erDiagram
     USERS ||--o| CUSTOMERS : "is"
-    USERS ||--o| ADMINISTRATORS : "is"
+    CUSTOMERS ||--o| ADMINISTRATORS : "is"
     USERS ||--o{ USER_ROLES : has
     ROLES ||--o{ USER_ROLES : grants
     BRANDS ||--o{ PRODUCTS : owns
@@ -76,7 +76,7 @@ numeric value, never a floating-point type.
 |---|---|
 | `users` | `id`, `email` unique, `password_hash`, `display_name`, `enabled`, timestamps |
 | `customers` | `user_id` PK/FK to `users` |
-| `administrators` | `user_id` PK/FK to `users` |
+| `administrators` | `user_id` PK/FK to `customers` (every administrator is also a customer; migration V101) |
 | `roles` | `id`, `code` unique |
 | `user_roles` | `user_id`, `role_id`, composite PK and two FKs |
 | `brands` | `id`, `name` unique, `description` |
@@ -152,7 +152,9 @@ These are historical facts at order time, so they do not violate 3NF.
 | `POST` | `/orders` | Customer | Create an immutable order from the cart |
 | `GET` | `/orders` | Customer | List only the current customer's orders |
 | `GET` | `/orders/{orderId}` | Customer | Read an owned order |
-| `POST` | `/orders/{orderId}/checkout` | Customer | Create a Stripe test Checkout Session |
+| `POST` | `/payments/checkout` | Customer | Create a Stripe test Checkout Session for a pending order (`{ "orderId" }`); an earlier open session is expired first |
+| `POST` | `/payments/sync` | Customer | Confirm a pending order's payment directly with Stripe (used on return from checkout and in order history), so a missed webhook cannot leave a paid order pending |
+| `POST` | `/payments/cancel` | Customer | Called by the checkout-cancel page: expire the pending order's Stripe session, cancel it, and release its stock |
 | `POST` | `/products/{productId}/reviews` | Customer | Submit a review |
 
 ### Administrator operations
@@ -177,7 +179,7 @@ and records an `UPDATE_STATUS` audit entry for the acting administrator.
 | From | Allowed next status | Triggered by |
 |---|---|---|
 | `PENDING_PAYMENT` | `PAID`, `PAYMENT_FAILED` | Stripe webhook / checkout-provider failure |
-| `PENDING_PAYMENT` | `CANCELED` | Stripe webhook or administrator |
+| `PENDING_PAYMENT` | `CANCELED` | Customer (`/payments/cancel`), Stripe webhook, or administrator |
 | `PAID` | `SHIPPED`, `CANCELED` | Administrator |
 | `SHIPPED` | `DELIVERED` | Administrator |
 | `DELIVERED`, `PAYMENT_FAILED`, `CANCELED` | None (terminal) | — |
@@ -194,7 +196,19 @@ it in the Stripe dashboard.
 |---|---|---|---|
 | `POST` | `/webhooks/stripe` | Stripe signature | Verify the raw signature and finalize payment idempotently |
 
-Webhook processing uses the provider event ID as an idempotency key. Browser return
+Checkout and the cart: creating an order reserves stock but leaves the cart
+unchanged; the purchased quantities are removed from the cart only when payment is
+confirmed (webhook or `/payments/sync`). Leaving Stripe via its cancel link cancels the
+order and returns the customer to the same cart. If the customer instead uses the
+browser's back button, the next `POST /orders` first closes any unpaid checkout and
+releases its stock. Stripe sessions expire after 31 minutes, so an abandoned
+reservation cannot block stock for long.
+
+Webhook processing uses the provider event ID as an idempotency key. Events for a
+checkout other than the order's current one (for example the session expired by a
+payment retry) are ignored. Failed or expired payments release the reserved stock.
+Unauthenticated API calls return 401 so the client can send the visitor to sign in;
+403 is reserved for authenticated users without permission and for CSRF failures. Browser return
 pages display a pending or final state; they do not decide payment success.
 
 ## Security boundaries

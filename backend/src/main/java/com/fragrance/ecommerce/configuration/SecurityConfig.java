@@ -71,12 +71,18 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf").permitAll()
+                // Signing out must work even if the session already expired (e.g. after a restart).
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").permitAll()
                 .requestMatchers("/api/v1/products", "/api/v1/products/**").permitAll()
                 .requestMatchers("/api/v1/webhooks/stripe").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMINISTRATOR")
                 .requestMatchers("/api/v1/auth/**").authenticated()
                 .anyRequest().authenticated()
             )
+            // Unauthenticated API calls get 401 (sign in), distinct from 403 (not allowed).
+            .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(
+                new org.springframework.security.web.authentication.HttpStatusEntryPoint(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED)))
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable());
         return http.build();

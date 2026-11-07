@@ -28,8 +28,11 @@ public class StripePaymentProvider implements PaymentProvider {
         try {
             var builder = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl(properties.successUrl())
-                .setCancelUrl(properties.cancelUrl())
+                // Stripe's minimum lifetime; an abandoned checkout releases its stock soon.
+                .setExpiresAt(java.time.Instant.now().plus(java.time.Duration.ofMinutes(31)).getEpochSecond())
+                // Return pages receive the order id so they can confirm or recover the order.
+                .setSuccessUrl(properties.successUrl() + "/" + order.getId())
+                .setCancelUrl(properties.cancelUrl() + "/" + order.getId())
                 .putMetadata("order_id", order.getId().toString())
                 .addLineItem(SessionCreateParams.LineItem.builder()
                     .setQuantity(1L)
@@ -71,6 +74,35 @@ public class StripePaymentProvider implements PaymentProvider {
                 throw illegalArgumentException;
             }
             throw new IllegalArgumentException("Stripe webhook signature is invalid", exception);
+        }
+    }
+
+    @Override
+    public CheckoutState checkoutState(String providerPaymentId) {
+        Session session = retrieve(providerPaymentId);
+        if ("paid".equals(session.getPaymentStatus()) || "no_payment_required".equals(session.getPaymentStatus())) {
+            return CheckoutState.PAID;
+        }
+        return "open".equals(session.getStatus()) ? CheckoutState.OPEN : CheckoutState.EXPIRED;
+    }
+
+    @Override
+    public void expireCheckout(String providerPaymentId) {
+        try {
+            Session session = retrieve(providerPaymentId);
+            if ("open".equals(session.getStatus())) session.expire();
+        } catch (StripeException exception) {
+            throw new IllegalStateException("Stripe checkout could not be closed", exception);
+        }
+    }
+
+    private Session retrieve(String providerPaymentId) {
+        requireConfigured(properties.secretKey(), "secret key");
+        Stripe.apiKey = properties.secretKey();
+        try {
+            return Session.retrieve(providerPaymentId);
+        } catch (StripeException exception) {
+            throw new IllegalStateException("Stripe checkout could not be retrieved", exception);
         }
     }
 

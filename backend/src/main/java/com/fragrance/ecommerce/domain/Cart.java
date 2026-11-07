@@ -59,6 +59,16 @@ public class Cart {
         items.removeIf(item -> item.getProduct().getId().equals(productId));
         updatedAt = Instant.now();
     }
+    /** Removes purchased quantities, dropping lines that reach zero. */
+    public void removeQuantity(UUID productId, int quantity) {
+        items.stream().filter(item -> item.getProduct().getId().equals(productId)).findFirst()
+            .ifPresent(item -> {
+                if (item.getQuantity() <= quantity) items.remove(item);
+                else item.setQuantity(item.getQuantity() - quantity);
+            });
+        updatedAt = Instant.now();
+    }
+
     public void clear() {
         items.clear();
         updatedAt = Instant.now();

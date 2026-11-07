@@ -31,6 +31,7 @@ class OrderServiceTest {
     @Mock OrderRepository orders;
     @Mock ProductRepository products;
     @Mock UserRepository users;
+    @Mock com.fragrance.ecommerce.payments.PaymentService payments;
     private OrderService service;
     private Customer customer;
     private Product product;
@@ -38,7 +39,7 @@ class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new OrderService(carts, orders, products, users);
+        service = new OrderService(carts, orders, products, users, payments);
         customer = new Customer("customer@example.test", "hash", "Customer",
             new Role(UUID.randomUUID(), "CUSTOMER"));
         product = new Product(new Brand("Brand", "Description"),
@@ -60,7 +61,10 @@ class OrderServiceTest {
         assertThat(order.getTotal()).isEqualByComparingTo("20.00");
         assertThat(order.getItems().getFirst().getProductNameSnapshot()).isEqualTo("Scent");
         assertThat(product.getStockQuantity()).isEqualTo(1);
-        assertThat(cart.getItems()).isEmpty();
+        // The cart only changes once payment succeeds.
+        assertThat(cart.getItems()).singleElement()
+            .satisfies(item -> assertThat(item.getQuantity()).isEqualTo(2));
+        org.mockito.Mockito.verify(payments).abandonPendingOrders(customer.getId());
     }
 
     @Test
