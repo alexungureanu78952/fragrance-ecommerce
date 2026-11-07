@@ -293,6 +293,21 @@ decision log before implementation continues.
 - Configure CI to install, lint, test, and build backend and frontend.
 - Add test data that is deterministic and contains no real personal data.
 
+**Current implementation progress**
+
+- 35 backend tests (business-rule unit tests plus MockMvc integration tests) and
+  4 frontend component tests pass locally.
+- `CheckoutFlowIntegrationTest` is the end-to-end checkout smoke test through the
+  HTTP API: registration, login, cart, order, Stripe checkout handoff, signed
+  webhook confirmation, customer order view, administrator fulfilment, 403 for
+  customers on administrator routes, and 409 for disallowed transitions. A second
+  case covers provider failure releasing stock. The payment provider is mocked, so
+  the test needs no Stripe credentials.
+- CI uploads the Surefire and Vitest JUnit reports as `backend-test-report` and
+  `frontend-test-report` artifacts on every run.
+- Frontend lint passes with no warnings.
+- A browser-driven end-to-end test against a running stack remains.
+
 **Exit gate**
 
 - CI passes from a clean checkout.
@@ -310,6 +325,19 @@ decision log before implementation continues.
 - Configure application logging to a retrievable file.
 - Run Lighthouse and Security Headers Inspector.
 - Capture rubric evidence and rehearse the demonstration.
+
+**Current implementation progress**
+
+- `index.html` carries the title, description, robots directive, canonical URL,
+  Open Graph and Twitter metadata, and `OnlineStore` structured data.
+- Each view updates the document title, description, and social metadata. Product
+  pages publish schema.org `Product` data with brand, price, and availability.
+- `VITE_SITE_URL` drives the canonical/Open Graph URLs and the generated
+  `robots.txt` and `sitemap.xml`.
+- The backend writes its application log to `logs/fragrance-backend.log`
+  (override with `LOGGING_FILE_NAME`).
+- Deployment, HTTPS, the public URL, the Lighthouse report, the Security Headers
+  Inspector report, and the demonstration rehearsal remain.
 
 **Exit gate**
 

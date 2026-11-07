@@ -41,6 +41,11 @@ must not be used to process real payments or store real payment card data.
 The frontend reads `VITE_API_URL` from the root `.env` when using the default
 local URL. If you change it, restart the Vite development server.
 
+`VITE_SITE_URL` is the public origin of the storefront (default
+`http://localhost:5173`). The build uses it for the canonical and Open Graph URLs
+and generates `robots.txt` and `sitemap.xml` from it, so set it to the deployed
+HTTPS origin before running `npm run build` for hosting.
+
 ## Local demo accounts
 
 These are fake accounts for local testing only:

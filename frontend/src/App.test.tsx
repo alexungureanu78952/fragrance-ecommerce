@@ -58,6 +58,12 @@ describe('storefront', () => {
     window.location.hash = '#/product/product-1'
     window.dispatchEvent(new HashChangeEvent('hashchange'))
     await waitFor(() => expect(screen.getByRole('region', { name: /dusk image carousel/i })).toBeInTheDocument())
+    expect(document.title).toBe('Dusk | Nocturne Fragrance')
+    const structured = document.head.querySelector('script[type="application/ld+json"][data-product-id="product-1"]')
+    expect(JSON.parse(structured?.textContent ?? '{}')).toMatchObject({
+      '@type': 'Product', name: 'Dusk', brand: { name: 'Nocturne' },
+      offers: { price: '42.00', priceCurrency: 'EUR', availability: 'https://schema.org/InStock' },
+    })
     const nextImage = screen.getByRole('button', { name: 'Show product image 2' })
     fireEvent.click(nextImage)
     expect(nextImage).toBeInTheDocument()

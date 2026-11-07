@@ -38,6 +38,13 @@ jobs:
         run: |
           chmod +x mvnw
           ./mvnw test
+      - name: Upload backend test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: backend/target/surefire-reports/
+          if-no-files-found: warn
 
   frontend:
     runs-on: ubuntu-latest
@@ -59,4 +66,11 @@ jobs:
         run: npm run build
       - name: Test frontend
         working-directory: frontend
-        run: npm test
+        run: npm test -- --reporter=default --reporter=junit --outputFile.junit=test-results/junit.xml
+      - name: Upload frontend test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-report
+          path: frontend/test-results/
+          if-no-files-found: warn

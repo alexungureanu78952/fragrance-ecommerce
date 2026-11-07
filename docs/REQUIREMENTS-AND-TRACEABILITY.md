@@ -91,7 +91,7 @@ card data is stored by this application.
 | Rubric requirement | Owner | Planned phase | Measurable acceptance test | Evidence |
 |---|---|---:|---|---|
 | Database is in 3NF | Data design | 2 | ERD and schema review show atomic attributes, no repeating groups, and dependencies on the complete key; PostgreSQL Flyway validation passes | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), migrations, PostgreSQL-backed test run |
-| Four complete scenarios | Product team | 4–7 | S1–S4 pass their scenario acceptance tests end to end; customer checkout now reaches the Stripe handoff and result routes | Test report and demonstration script; browser evidence pending |
+| Four complete scenarios | Product team | 4–7 | S1–S4 pass their scenario acceptance tests end to end; customer checkout now reaches the Stripe handoff and result routes | `CheckoutFlowIntegrationTest` (API end-to-end), CI test-report artifacts; demonstration script and browser evidence pending |
 | MVC/Repository architecture | Backend foundation | 2, 4 | Controllers, services, repositories, domain, security, and configuration have separated responsibilities | [Architecture and database design](ARCHITECTURE-AND-DATABASE.md), source tree |
 | Images, text, tables, and links | Frontend | 7 | Catalogue and administrator product-management screens render product visuals, text, tabular order data, and navigation links | Administrator order table (`App.test.tsx` order-management test), component tests; screenshots and browser evidence pending |
 | At least three classes | Backend foundation | 4 | Backend contains at least three meaningful domain/service classes used by the application | Source and tests |
@@ -104,13 +104,13 @@ card data is stored by this application.
 | Purposeful animation | Frontend UX | 3, 7 | Loading pulse and carousel transitions communicate state and respect reduced motion | [UX and visual design](UX-AND-VISUAL-DESIGN.md), CSS, browser evidence pending |
 | Two CSS files and 10 properties | Frontend styling | 7 | Organized `index.css` and `App.css` provide the responsive visual system | [UX and visual design](UX-AND-VISUAL-DESIGN.md), source inspection and build |
 | Responsive design | Frontend styling | 3, 7 | Catalogue, details, cart, and auth layouts include mobile/tablet breakpoints | [UX and visual design](UX-AND-VISUAL-DESIGN.md), CSS, browser viewport evidence pending |
-| Five unit tests | Testing | 9 | CI reports at least five meaningful business-rule unit tests | CI test report |
+| Five unit tests | Testing | 9 | CI reports at least five meaningful business-rule unit tests | `backend-test-report` CI artifact (Surefire), `OrderServiceTest`, `CartServiceTest`, `AuthServiceTest`, `ProductServiceTest`, `PaymentServiceTest` |
 | Git versioning | Delivery | 0 | Repository has history with coherent commits | GitHub repository |
 | GitHub Actions CI/CD | Delivery | 0, 9 | Push and pull request workflow installs, lints/tests, and builds backend and frontend | Workflow run |
-| User activity logging | Operations | 4, 8, 10 | Authentication and product administration actions are persisted and written to a structured application log without secrets | `AuditLogService`, log configuration and sample |
+| User activity logging | Operations | 4, 8, 10 | Authentication and product administration actions are persisted and written to a structured application log without secrets | `AuditLogService`, `logging.file.name` (`logs/fragrance-backend.log`); log sample pending |
 | Hosting | Deployment | 10 | Public URL serves the application | Deployment URL and smoke test |
-| SEO | SEO | 10 | Lighthouse SEO score is at least 90/100 and required metadata is present | Lighthouse report |
-| Stripe payments | Payments | 6 | Stripe test-mode Checkout Session and signed webhook update order status while recording only provider ID/status; provider failure marks payment/order failed and releases reserved stock | `PaymentServiceTest`, Stripe test-mode demonstration |
+| SEO | SEO | 10 | Lighthouse SEO score is at least 90/100 and required metadata is present | Metadata, Open Graph, structured data, generated `robots.txt`/`sitemap.xml`; Lighthouse report pending deployment |
+| Stripe payments | Payments | 6 | Stripe test-mode Checkout Session and signed webhook update order status while recording only provider ID/status; provider failure marks payment/order failed and releases reserved stock | `PaymentServiceTest`, `CheckoutFlowIntegrationTest`; live Stripe test-mode demonstration pending |
 | CSRF protection | Security I | 4, 8 | State-changing requests without valid CSRF protection are rejected | `AuthControllerIntegrationTest.stateChangingRequestsRequireCsrf`; browser registration/login verified with the configured `X-CSRF-TOKEN` header |
 | XSS protection | Security I | 4, 8 | User-controlled content is safely rendered and XSS payload tests do not execute | `App.test.tsx`, React text rendering test |
 | SQL injection protection | Security I | 5, 8 | Search/filter input cannot alter query semantics and sorting accepts only allow-listed fields | Parameterized repository query, PostgreSQL live catalogue smoke test, and catalogue service tests |

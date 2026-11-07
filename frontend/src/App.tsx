@@ -23,6 +23,53 @@ function money(value: number) {
   return new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(value)
 }
 
+const SITE_NAME = 'Nocturne Fragrance'
+const DEFAULT_DESCRIPTION = 'Nocturne Fragrance — considered botanical and mineral compositions for quiet moments.'
+
+function setMeta(selector: string, attribute: string, value: string) {
+  const element = document.head.querySelector(selector)
+  if (element) element.setAttribute(attribute, value)
+}
+
+// Keeps the document title, description, and social metadata in step with the current view.
+function usePageMeta(title: string, description = DEFAULT_DESCRIPTION) {
+  useEffect(() => {
+    const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | The scent edit`
+    document.title = fullTitle
+    setMeta('meta[name="description"]', 'content', description)
+    setMeta('meta[property="og:title"]', 'content', fullTitle)
+    setMeta('meta[property="og:description"]', 'content', description)
+    setMeta('meta[name="twitter:title"]', 'content', fullTitle)
+    setMeta('meta[name="twitter:description"]', 'content', description)
+  }, [title, description])
+}
+
+// Publishes schema.org Product data for the product being viewed; textContent keeps it inert.
+function useProductStructuredData(product: Product | null) {
+  useEffect(() => {
+    if (!product) return
+    const script = document.createElement('script')
+    script.type = 'application/ld+json'
+    script.dataset.productId = product.id
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: product.description,
+      brand: { '@type': 'Brand', name: product.brandName },
+      category: product.categoryName,
+      offers: {
+        '@type': 'Offer',
+        price: product.price.toFixed(2),
+        priceCurrency: 'EUR',
+        availability: product.stockQuantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      },
+    })
+    document.head.appendChild(script)
+    return () => script.remove()
+  }, [product])
+}
+
 function Header({ user, cartCount, onLogout }: { user: User | null; cartCount: number; onLogout: () => void }) {
   return <header className="site-header">
     <a className="brand" href="#/">NOCTURNE <span>FRAGRANCE</span></a>
@@ -39,6 +86,7 @@ function Header({ user, cartCount, onLogout }: { user: User | null; cartCount: n
 type ProductForm = { brandId: string; categoryId: string; name: string; description: string; price: string; stockQuantity: string }
 
 function Admin({ user }: { user: User | null }) {
+  usePageMeta('Administration')
   const [products, setProducts] = useState<Product[]>([])
   const [brands, setBrands] = useState<Reference[]>([])
   const [categories, setCategories] = useState<Reference[]>([])
@@ -125,14 +173,21 @@ function ProductVisual({ product, active = 0, onChange }: { product: Product; ac
 }
 
 function Catalog({ onOpen }: { onOpen: (id: string) => void }) {
-  const [products, setProducts] = useState<Product[]>([])
+  usePageMeta('', 'Shop small-batch botanical and mineral fragrances from Nocturne. Explore woody, floral, and amber compositions.')
   const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [attempt, setAttempt] = useState(0)
+  const [result, setResult] = useState<{ key: string; products: Product[]; error: string } | null>(null)
+  const key = `${search}|${attempt}`
   useEffect(() => {
-    setLoading(true)
-    api.products(search).then((page) => setProducts(page.items)).catch((reason: Error) => setError(reason.message)).finally(() => setLoading(false))
-  }, [search])
+    let active = true
+    api.products(search)
+      .then((page) => { if (active) setResult({ key, products: page.items, error: '' }) })
+      .catch((reason: Error) => { if (active) setResult({ key, products: [], error: reason.message }) })
+    return () => { active = false }
+  }, [key, search])
+  const loading = result?.key !== key
+  const products = loading ? [] : result.products
+  const error = loading ? '' : result.error
   return <main>
     <section className="hero-section">
       <p className="eyebrow">THE SCENT EDIT · 2026</p>
@@ -145,7 +200,7 @@ function Catalog({ onOpen }: { onOpen: (id: string) => void }) {
         <label className="search"><span className="sr-only">Search fragrances</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search scents" /></label>
       </div>
       {loading && <p className="state">Loading the collection<span className="pulse">...</span></p>}
-      {error && <div className="state error-state"><strong>We could not load the collection.</strong><span>{error}</span><button className="button secondary" onClick={() => setSearch(search)}>Try again</button></div>}
+      {error && <div className="state error-state"><strong>We could not load the collection.</strong><span>{error}</span><button className="button secondary" onClick={() => setAttempt(attempt + 1)}>Try again</button></div>}
       {!loading && !error && products.length === 0 && <p className="state">No fragrances match that search.</p>}
       <div className="product-grid">{products.map((product) => <article className="product-card" key={product.id}>
         <button className="card-link" onClick={() => onOpen(product.id)}><ProductVisual product={product} /><div className="card-copy"><p className="eyebrow">{product.brandName} · {product.categoryName}</p><h3>{product.name}</h3><span>{money(product.price)}</span></div></button>
@@ -156,14 +211,16 @@ function Catalog({ onOpen }: { onOpen: (id: string) => void }) {
 
 function ProductDetails({ id, onAdded }: { id: string; onAdded: () => void }) {
   const [product, setProduct] = useState<Product | null>(null)
+  usePageMeta(product?.name ?? 'Fragrance', product ? `${product.name} by ${product.brandName}: ${product.description}`.slice(0, 160) : undefined)
+  useProductStructuredData(product)
   const [active, setActive] = useState(0)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  // The parent keys this component by product id, so each product starts with fresh state.
   useEffect(() => {
-    setProduct(null)
-    setError('')
-    setMessage('')
-    api.product(id).then(setProduct).catch((reason: Error) => setError(reason.message))
+    let active = true
+    api.product(id).then((next) => { if (active) setProduct(next) }).catch((reason: Error) => { if (active) setError(reason.message) })
+    return () => { active = false }
   }, [id])
   if (error) return <div className="state error-state"><strong>Product unavailable</strong><span>{error}</span></div>
   if (!product) return <p className="state">Loading product<span className="pulse">...</span></p>
@@ -171,6 +228,7 @@ function ProductDetails({ id, onAdded }: { id: string; onAdded: () => void }) {
 }
 
 function CartPage({ cart, onChange, user }: { cart: Cart | null; onChange: () => void; user: User | null }) {
+  usePageMeta('Shopping cart')
   const [error, setError] = useState('')
   const [checkingOut, setCheckingOut] = useState(false)
   if (!user) return <div className="state error-state"><strong>Sign in to view your cart.</strong><a className="button" href="#/login">Sign in</a></div>
@@ -184,10 +242,12 @@ function CartPage({ cart, onChange, user }: { cart: Cart | null; onChange: () =>
 }
 
 function PaymentResult({ canceled = false }: { canceled?: boolean }) {
+  usePageMeta(canceled ? 'Checkout canceled' : 'Order confirmed')
   return <main className="state payment-result"><p className="eyebrow">{canceled ? 'CHECKOUT CANCELED' : 'PAYMENT RECEIVED'}</p><h1>{canceled ? 'Your selection is still here.' : 'Thank you for your order.'}</h1><p>{canceled ? 'No payment was taken. You can return to your cart whenever you are ready.' : 'Stripe will confirm the payment and your order status will update shortly.'}</p><div><a className="button" href={canceled ? '#/cart' : '#/account'}>{canceled ? 'Return to cart' : 'View order history'} <span>↗</span></a><a className="back-link" href="#/">Continue browsing</a></div></main>
 }
 
 function Account({ user }: { user: User | null }) {
+  usePageMeta('Your account')
   const [orders, setOrders] = useState<Order[]>([])
   const [error, setError] = useState('')
   useEffect(() => { if (user) api.orders().then((page) => setOrders(page.items)).catch((reason: Error) => setError(reason.message)) }, [user])
@@ -196,6 +256,7 @@ function Account({ user }: { user: User | null }) {
 }
 
 function Login({ onLogin }: { onLogin: (user: User) => void }) {
+  usePageMeta('Sign in')
   const [registering, setRegistering] = useState(false)
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
   const [captchaToken, setCaptchaToken] = useState('')
@@ -222,10 +283,11 @@ function App() {
   const [user, setUser] = useState<User | null>(null)
   const [cart, setCart] = useState<Cart | null>(null)
   useEffect(() => { const changed = () => setCurrent(route()); window.addEventListener('hashchange', changed); api.me().then(setUser).catch(() => setUser(null)); return () => window.removeEventListener('hashchange', changed) }, [])
-  useEffect(() => { if (user) api.cart().then(setCart).catch(() => setCart(null)); else setCart(null) }, [user])
+  useEffect(() => { if (user) api.cart().then(setCart).catch(() => setCart(null)) }, [user])
   const refreshCart = () => { if (user) api.cart().then(setCart) }
-  const logout = () => api.logout().then(() => setUser(null)).then(() => { window.location.hash = '#/' })
-  return <><Header user={user} cartCount={cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0} onLogout={logout} /><div className="page">{current.page === 'catalog' && <Catalog onOpen={(id) => { window.location.hash = `#/product/${id}` }} />}{current.page === 'product' && current.id && <ProductDetails id={current.id} onAdded={refreshCart} />}{current.page === 'cart' && <CartPage cart={cart} onChange={refreshCart} user={user} />}{current.page === 'login' && <Login onLogin={(next) => { setUser(next); window.location.hash = '#/' }} />}{current.page === 'account' && <Account user={user} />}{current.page === 'admin' && <Admin user={user} />}{current.page === 'payment-success' && <PaymentResult />}{current.page === 'payment-cancel' && <PaymentResult canceled />}</div><footer><span>NOCTURNE FRAGRANCE</span><span>Educational shop · Stripe test mode only</span></footer></>
+  const logout = () => api.logout().then(() => { setUser(null); setCart(null) }).then(() => { window.location.hash = '#/' })
+  const visibleCart = user ? cart : null
+  return <><Header user={user} cartCount={visibleCart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0} onLogout={logout} /><div className="page">{current.page === 'catalog' && <Catalog onOpen={(id) => { window.location.hash = `#/product/${id}` }} />}{current.page === 'product' && current.id && <ProductDetails key={current.id} id={current.id} onAdded={refreshCart} />}{current.page === 'cart' && <CartPage cart={visibleCart} onChange={refreshCart} user={user} />}{current.page === 'login' && <Login onLogin={(next) => { setUser(next); window.location.hash = '#/' }} />}{current.page === 'account' && <Account user={user} />}{current.page === 'admin' && <Admin user={user} />}{current.page === 'payment-success' && <PaymentResult />}{current.page === 'payment-cancel' && <PaymentResult canceled />}</div><footer><span>NOCTURNE FRAGRANCE</span><span>Educational shop · Stripe test mode only</span></footer></>
 }
 
 export default App
