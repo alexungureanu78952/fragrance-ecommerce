@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { api } from './api'
-import type { Cart, Order, Product, Reference, User } from './api'
+import type { AdminOrder, Cart, Order, Product, Reference, User } from './api'
 import './App.css'
 
 type Route = { page: 'catalog' | 'product' | 'cart' | 'login' | 'account' | 'admin' | 'payment-success' | 'payment-cancel'; id?: string }
@@ -52,7 +52,66 @@ function Admin({ user }: { user: User | null }) {
   const update = (key: keyof ProductForm, value: string) => setForm({ ...form, [key]: value })
   const submit = (event: FormEvent) => { event.preventDefault(); setError(''); setMessage(''); const payload = { ...form, price: Number(form.price), stockQuantity: Number(form.stockQuantity) }; const action = editing ? api.updateProduct(editing, payload) : api.createProduct(payload); action.then(() => { setMessage(editing ? 'Product updated.' : 'Product created.'); setEditing(null); setForm({ brandId: '', categoryId: '', name: '', description: '', price: '', stockQuantity: '0' }); load() }).catch((reason: Error) => setError(reason.message)) }
   const edit = (product: Product) => { setEditing(product.id); setForm({ brandId: product.brandId, categoryId: product.categoryId, name: product.name, description: product.description, price: String(product.price), stockQuantity: String(product.stockQuantity) }) }
-  return <main className="admin-layout"><div><p className="eyebrow">ADMINISTRATION</p><h1>Shape the collection.</h1><p className="muted">Create, update, and deactivate products. Server-side authorization remains authoritative.</p></div><section className="admin-grid"><form className="admin-form" onSubmit={submit}><p className="eyebrow">{editing ? 'EDIT PRODUCT' : 'NEW PRODUCT'}</p><label>Brand<select required value={form.brandId} onChange={(event) => update('brandId', event.target.value)}><option value="">Select a brand</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}</select></label><label>Category<select required value={form.categoryId} onChange={(event) => update('categoryId', event.target.value)}><option value="">Select a category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Name<input required maxLength={180} value={form.name} onChange={(event) => update('name', event.target.value)} /></label><label>Description<textarea required maxLength={4000} value={form.description} onChange={(event) => update('description', event.target.value)} /></label><div className="form-row"><label>Price<input required min="0.01" step="0.01" type="number" value={form.price} onChange={(event) => update('price', event.target.value)} /></label><label>Stock<input required min="0" type="number" value={form.stockQuantity} onChange={(event) => update('stockQuantity', event.target.value)} /></label></div>{error && <p className="error-text" role="alert">{error}</p>}{message && <p className="success-message" role="status">{message}</p>}<button className="button">{editing ? 'Save changes' : 'Create product'} <span>↗</span></button>{editing && <button type="button" className="text-button" onClick={() => setEditing(null)}>Cancel editing</button>}</form><div className="admin-products"><p className="eyebrow">ACTIVE PRODUCTS</p>{products.length === 0 && <p className="state">No active products found.</p>}{products.map((product) => <article className="admin-product" key={product.id}><div><strong>{product.name}</strong><span>{product.brandName} · {money(product.price)} · {product.stockQuantity} in stock</span></div><div><button className="text-button" onClick={() => edit(product)}>Edit</button><button className="text-button danger" onClick={() => api.deactivateProduct(product.id).then(load).catch((reason: Error) => setError(reason.message))}>Deactivate</button></div></article>)}</div></section></main>
+  return <main className="admin-layout"><div><p className="eyebrow">ADMINISTRATION</p><h1>Shape the collection.</h1><p className="muted">Manage products and fulfil customer orders. Server-side authorization remains authoritative.</p></div><section className="admin-grid"><form className="admin-form" onSubmit={submit}><p className="eyebrow">{editing ? 'EDIT PRODUCT' : 'NEW PRODUCT'}</p><label>Brand<select required value={form.brandId} onChange={(event) => update('brandId', event.target.value)}><option value="">Select a brand</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}</select></label><label>Category<select required value={form.categoryId} onChange={(event) => update('categoryId', event.target.value)}><option value="">Select a category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Name<input required maxLength={180} value={form.name} onChange={(event) => update('name', event.target.value)} /></label><label>Description<textarea required maxLength={4000} value={form.description} onChange={(event) => update('description', event.target.value)} /></label><div className="form-row"><label>Price<input required min="0.01" step="0.01" type="number" value={form.price} onChange={(event) => update('price', event.target.value)} /></label><label>Stock<input required min="0" type="number" value={form.stockQuantity} onChange={(event) => update('stockQuantity', event.target.value)} /></label></div>{error && <p className="error-text" role="alert">{error}</p>}{message && <p className="success-message" role="status">{message}</p>}<button className="button">{editing ? 'Save changes' : 'Create product'} <span>↗</span></button>{editing && <button type="button" className="text-button" onClick={() => setEditing(null)}>Cancel editing</button>}</form><div className="admin-products"><p className="eyebrow">ACTIVE PRODUCTS</p>{products.length === 0 && <p className="state">No active products found.</p>}{products.map((product) => <article className="admin-product" key={product.id}><div><strong>{product.name}</strong><span>{product.brandName} · {money(product.price)} · {product.stockQuantity} in stock</span></div><div><button className="text-button" onClick={() => edit(product)}>Edit</button><button className="text-button danger" onClick={() => api.deactivateProduct(product.id).then(load).catch((reason: Error) => setError(reason.message))}>Deactivate</button></div></article>)}</div></section><AdminOrders /></main>
+}
+
+const ORDER_STATUSES = ['PENDING_PAYMENT', 'PAID', 'SHIPPED', 'DELIVERED', 'PAYMENT_FAILED', 'CANCELED']
+const NEXT_STATUSES: Record<string, string[]> = { PENDING_PAYMENT: ['CANCELED'], PAID: ['SHIPPED', 'CANCELED'], SHIPPED: ['DELIVERED'] }
+const ACTION_LABELS: Record<string, string> = { SHIPPED: 'Mark shipped', DELIVERED: 'Mark delivered', CANCELED: 'Cancel' }
+
+function statusLabel(status: string) {
+  return status.replaceAll('_', ' ').toLowerCase()
+}
+
+function AdminOrders() {
+  const [status, setStatus] = useState('')
+  const [page, setPage] = useState(0)
+  const [reload, setReload] = useState(0)
+  const [loaded, setLoaded] = useState<{ key: string; items: AdminOrder[]; totalPages: number; error: string } | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [actionError, setActionError] = useState('')
+  const [message, setMessage] = useState('')
+  const key = `${status}|${page}|${reload}`
+  useEffect(() => {
+    let active = true
+    api.adminOrders(status, page)
+      .then((result) => { if (active) setLoaded({ key, items: result.items, totalPages: result.totalPages, error: '' }) })
+      .catch((reason: Error) => { if (active) setLoaded({ key, items: [], totalPages: 0, error: reason.message }) })
+    return () => { active = false }
+  }, [key, status, page])
+  const loading = loaded?.key !== key
+  const orders = loaded?.items ?? []
+  const totalPages = loaded?.totalPages ?? 0
+  const error = actionError || (loading ? '' : loaded?.error ?? '')
+  const change = (order: AdminOrder, next: string) => {
+    setBusy(order.id)
+    setActionError('')
+    setMessage('')
+    api.updateOrderStatus(order.id, next).then(() => { setMessage(`Order ${order.id.slice(0, 8)} is now ${statusLabel(next)}.`); setReload(reload + 1) }).catch((reason: Error) => setActionError(reason.message)).finally(() => setBusy(null))
+  }
+  return <section className="admin-orders" aria-labelledby="admin-orders-heading">
+    <div className="section-heading"><div><p className="eyebrow">ORDER MANAGEMENT</p><h2 id="admin-orders-heading">Customer orders</h2></div>
+      <label className="filter">Status<select value={status} onChange={(event) => { setPage(0); setActionError(''); setMessage(''); setStatus(event.target.value) }}><option value="">All statuses</option>{ORDER_STATUSES.map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select></label>
+    </div>
+    {error && <p className="error-text" role="alert">{error}</p>}
+    {message && <p className="success-message" role="status">{message}</p>}
+    {loading && <p className="state">Loading orders<span className="pulse">...</span></p>}
+    {!loading && !error && orders.length === 0 && <p className="state">No orders match this filter.</p>}
+    {!loading && orders.length > 0 && <div className="table-scroll"><table className="orders-table">
+      <caption className="sr-only">Customer orders, newest first</caption>
+      <thead><tr><th scope="col">Order</th><th scope="col">Placed</th><th scope="col">Customer</th><th scope="col">Items</th><th scope="col">Total</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+      <tbody>{orders.map((order) => <tr key={order.id}>
+        <td>{order.id.slice(0, 8)}</td>
+        <td>{new Date(order.createdAt).toLocaleDateString('en-IE')}</td>
+        <td><span className="cell-main">{order.customerName}</span><span className="cell-sub">{order.customerEmail}</span></td>
+        <td>{order.items.map((item) => `${item.quantity} × ${item.productName}`).join(', ')}</td>
+        <td>{money(order.total)}</td>
+        <td><span className="status-tag">{statusLabel(order.status)}</span></td>
+        <td>{(NEXT_STATUSES[order.status] ?? []).map((next) => <button key={next} className={`text-button${next === 'CANCELED' ? ' danger' : ''}`} disabled={busy === order.id} onClick={() => change(order, next)}>{ACTION_LABELS[next]}</button>)}</td>
+      </tr>)}</tbody>
+    </table></div>}
+    {totalPages > 1 && <div className="pager"><button className="text-button" disabled={page === 0} onClick={() => setPage(page - 1)}>← Previous</button><span>Page {page + 1} of {totalPages}</span><button className="text-button" disabled={page + 1 >= totalPages} onClick={() => setPage(page + 1)}>Next →</button></div>}
+  </section>
 }
 
 function ProductVisual({ product, active = 0, onChange }: { product: Product; active?: number; onChange?: (index: number) => void }) {

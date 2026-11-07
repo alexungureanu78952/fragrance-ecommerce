@@ -46,10 +46,10 @@ class OrderServiceTest {
             BigDecimal.TEN, 3);
         cart = new Cart(customer);
         cart.addItem(product, 2);
-        when(orders.findByCustomerIdAndIdempotencyKey(customer.getId(), "key"))
+        lenient().when(orders.findByCustomerIdAndIdempotencyKey(customer.getId(), "key"))
             .thenReturn(Optional.empty());
-        when(carts.findByCustomerId(customer.getId())).thenReturn(Optional.of(cart));
-        when(products.findById(product.getId())).thenReturn(Optional.of(product));
+        lenient().when(carts.findByCustomerId(customer.getId())).thenReturn(Optional.of(cart));
+        lenient().when(products.findById(product.getId())).thenReturn(Optional.of(product));
         lenient().when(users.findById(customer.getId())).thenReturn(Optional.of(customer));
         lenient().when(orders.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
@@ -77,5 +77,53 @@ class OrderServiceTest {
         assertThatThrownBy(() -> service.create(customer.getId(), "key"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("Insufficient stock");
+    }
+
+    @Test
+    void listsOrdersWithOptionalStatus() {
+        var pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        org.springframework.data.domain.Page<com.fragrance.ecommerce.domain.Order> page =
+            new org.springframework.data.domain.PageImpl<>(java.util.List.of());
+        when(orders.findAllByOrderByCreatedAtDesc(pageable)).thenReturn(page);
+        when(orders.findByStatusOrderByCreatedAtDesc(com.fragrance.ecommerce.domain.OrderStatus.PAID, pageable))
+            .thenReturn(page);
+
+        assertThat(service.listAll(null, pageable)).isSameAs(page);
+        assertThat(service.listAll(com.fragrance.ecommerce.domain.OrderStatus.PAID, pageable)).isSameAs(page);
+    }
+
+    @Test
+    void adminUpdatesOrderStatusAndRestoresStockOnCancel() {
+        var order = service.create(customer.getId(), "key");
+        order.markPaid();
+        when(orders.findById(order.getId())).thenReturn(Optional.of(order));
+
+        var shipped = service.updateStatus(order.getId(), com.fragrance.ecommerce.domain.OrderStatus.SHIPPED);
+        assertThat(shipped.getStatus()).isEqualTo(com.fragrance.ecommerce.domain.OrderStatus.SHIPPED);
+
+        var delivered = service.updateStatus(order.getId(), com.fragrance.ecommerce.domain.OrderStatus.DELIVERED);
+        assertThat(delivered.getStatus()).isEqualTo(com.fragrance.ecommerce.domain.OrderStatus.DELIVERED);
+    }
+
+    @Test
+    void adminCancelingPendingOrderRestoresStock() {
+        var order = service.create(customer.getId(), "key");
+        assertThat(product.getStockQuantity()).isEqualTo(1);
+        when(orders.findById(order.getId())).thenReturn(Optional.of(order));
+
+        var canceled = service.updateStatus(order.getId(), com.fragrance.ecommerce.domain.OrderStatus.CANCELED);
+        assertThat(canceled.getStatus()).isEqualTo(com.fragrance.ecommerce.domain.OrderStatus.CANCELED);
+        assertThat(product.getStockQuantity()).isEqualTo(3);
+    }
+
+    @Test
+    void rejectsDisallowedTransition() {
+        var order = service.create(customer.getId(), "key");
+        when(orders.findById(order.getId())).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> service.updateStatus(order.getId(), com.fragrance.ecommerce.domain.OrderStatus.DELIVERED))
+            .isInstanceOf(com.fragrance.ecommerce.exception.ConflictException.class)
+            .hasMessageContaining("cannot transition from PENDING_PAYMENT to DELIVERED");
+        assertThat(product.getStockQuantity()).isEqualTo(1);
     }
 }

@@ -167,6 +167,27 @@ These are historical facts at order time, so they do not violate 3NF.
 | `GET` | `/admin/orders` | Administrator | Search and paginate all orders |
 | `PATCH` | `/admin/orders/{orderId}/status` | Administrator | Apply an allowed order transition |
 
+`GET /admin/orders` accepts an optional `status` filter plus `page`/`size` and returns
+orders newest first with the customer's name and email, the creation time, and the
+item snapshots. `PATCH /admin/orders/{orderId}/status` takes `{ "status": "SHIPPED" }`
+and records an `UPDATE_STATUS` audit entry for the acting administrator.
+
+### Order status transitions
+
+| From | Allowed next status | Triggered by |
+|---|---|---|
+| `PENDING_PAYMENT` | `PAID`, `PAYMENT_FAILED` | Stripe webhook / checkout-provider failure |
+| `PENDING_PAYMENT` | `CANCELED` | Stripe webhook or administrator |
+| `PAID` | `SHIPPED`, `CANCELED` | Administrator |
+| `SHIPPED` | `DELIVERED` | Administrator |
+| `DELIVERED`, `PAYMENT_FAILED`, `CANCELED` | None (terminal) | — |
+
+`Order.canTransitionTo` is the single source of these rules. A disallowed transition
+returns HTTP 409 and changes nothing. When an administrator cancels a `PENDING_PAYMENT`
+or `PAID` order, its reserved stock is restored in the same transaction. Canceling a
+paid order does not issue a Stripe refund. In test mode, the administrator refunds
+it in the Stripe dashboard.
+
 ### Payment webhook
 
 | Method | Endpoint | Access | Purpose |

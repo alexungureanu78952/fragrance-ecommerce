@@ -66,14 +66,28 @@ public class Order {
     public String getCurrency() { return currency; }
     public BigDecimal getTotal() { return total; }
     public List<OrderItem> getItems() { return List.copyOf(items); }
-    public void markPaid() { transition(OrderStatus.PAID); }
-    public void markPaymentFailed() { transition(OrderStatus.PAYMENT_FAILED); }
-    public void markCanceled() { transition(OrderStatus.CANCELED); }
-    private void transition(OrderStatus next) {
-        if (status != OrderStatus.PENDING_PAYMENT) {
-            throw new IllegalStateException("Order status cannot transition from " + status);
+    public Instant getCreatedAt() { return createdAt; }
+    public void markPaid() { transitionTo(OrderStatus.PAID); }
+    public void markPaymentFailed() { transitionTo(OrderStatus.PAYMENT_FAILED); }
+    public void markCanceled() { transitionTo(OrderStatus.CANCELED); }
+    public void markShipped() { transitionTo(OrderStatus.SHIPPED); }
+    public void markDelivered() { transitionTo(OrderStatus.DELIVERED); }
+
+    public void transitionTo(OrderStatus next) {
+        if (!canTransitionTo(next)) {
+            throw new IllegalStateException("Order status cannot transition from " + status + " to " + next);
         }
         status = next;
         updatedAt = Instant.now();
+    }
+
+    public boolean canTransitionTo(OrderStatus next) {
+        if (next == null || next == status) return false;
+        return switch (status) {
+            case PENDING_PAYMENT -> next == OrderStatus.PAID || next == OrderStatus.PAYMENT_FAILED || next == OrderStatus.CANCELED;
+            case PAID -> next == OrderStatus.SHIPPED || next == OrderStatus.CANCELED;
+            case SHIPPED -> next == OrderStatus.DELIVERED;
+            case DELIVERED, PAYMENT_FAILED, CANCELED -> false;
+        };
     }
 }

@@ -56,6 +56,30 @@ export type OrderPage = {
   totalPages: number
 }
 
+export type AdminOrder = {
+  id: string
+  customerId: string
+  customerEmail: string
+  customerName: string
+  status: string
+  total: number
+  createdAt: string
+  items: Array<{
+    productName: string
+    unitPrice: number
+    quantity: number
+    lineTotal: number
+  }>
+}
+
+export type AdminOrderPage = {
+  items: AdminOrder[]
+  page: number
+  size: number
+  totalItems: number
+  totalPages: number
+}
+
 export type Reference = { id: string; name: string; description: string }
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1'
@@ -121,4 +145,11 @@ export const api = {
     method: 'PATCH', body: JSON.stringify(product),
   }),
   deactivateProduct: (id: string) => request<void>(`/admin/products/${id}`, { method: 'DELETE' }),
+  adminOrders: (status = '', page = 0) =>
+    request<AdminOrderPage>(`/admin/orders?page=${page}&size=20${status ? `&status=${encodeURIComponent(status)}` : ''}`),
+  updateOrderStatus: (orderId: string, status: string) =>
+    request<AdminOrder>(`/admin/orders/${orderId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
 }

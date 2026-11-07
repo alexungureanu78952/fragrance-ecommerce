@@ -3,7 +3,9 @@ package com.fragrance.ecommerce.orders;
 import com.fragrance.ecommerce.domain.Cart;
 import com.fragrance.ecommerce.domain.Customer;
 import com.fragrance.ecommerce.domain.Order;
+import com.fragrance.ecommerce.domain.OrderStatus;
 import com.fragrance.ecommerce.domain.Product;
+import com.fragrance.ecommerce.exception.ConflictException;
 import com.fragrance.ecommerce.exception.NotFoundException;
 import com.fragrance.ecommerce.repository.CartRepository;
 import com.fragrance.ecommerce.repository.OrderRepository;
@@ -68,5 +70,29 @@ public class OrderService {
     public Order getOwned(UUID customerId, UUID orderId) {
         return orders.findById(orderId).filter(order -> order.getCustomer().getId().equals(customerId))
             .orElseThrow(() -> new NotFoundException("Order was not found"));
+    }
+    @Transactional(readOnly = true)
+    public Page<Order> listAll(OrderStatus status, Pageable pageable) {
+        if (status != null) {
+            return orders.findByStatusOrderByCreatedAtDesc(status, pageable);
+        }
+        return orders.findAllByOrderByCreatedAtDesc(pageable);
+    }
+    @Transactional
+    public Order updateStatus(UUID orderId, OrderStatus nextStatus) {
+        var order = orders.findById(orderId)
+            .orElseThrow(() -> new NotFoundException("Order was not found"));
+        if (!order.canTransitionTo(nextStatus)) {
+            throw new ConflictException("Order status cannot transition from " + order.getStatus() + " to " + nextStatus);
+        }
+        if (nextStatus == OrderStatus.CANCELED) {
+            for (var item : order.getItems()) {
+                if (item.getProduct() != null) {
+                    item.getProduct().restoreStock(item.getQuantity());
+                }
+            }
+        }
+        order.transitionTo(nextStatus);
+        return orders.save(order);
     }
 }

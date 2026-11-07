@@ -193,6 +193,10 @@ decision log before implementation continues.
 - Checkout-provider failures are handled explicitly: payment and order are marked
   failed, reserved stock is restored once, and the API returns a clear availability
   error instead of leaving a locked pending order.
+- Administrator order management is implemented: a paginated, status-filterable
+  order list and a status endpoint that enforces the `PAID → SHIPPED → DELIVERED`
+  and cancellation transitions, restores stock on cancellation, returns HTTP 409
+  for disallowed transitions, and writes an audit entry.
 
 **Exit gate**
 
@@ -222,6 +226,8 @@ decision log before implementation continues.
   authenticated customer order history.
 - Added role-aware administrator navigation and product create/update/deactivate UI
   with explicit permission and API error states.
+- Added an administrator order table with a status filter, pagination, and
+  only the transition actions the backend allows for each order.
 - Added Vitest and Testing Library coverage for catalogue rendering, empty state,
   product navigation, and accessible carousel controls. Browser evidence remains.
 - Verified the live local storefront against the running backend: the public
@@ -255,8 +261,8 @@ decision log before implementation continues.
 - Added configurable per-client rate limiting with a 100-request, 60-second
   default window and explicit HTTP 429 responses.
 - Added CSP, frame, referrer, and permissions security headers through Spring
-  Security. CAPTCHA, upload metadata hardening, deployment-boundary evidence, and
-  Security Headers Inspector verification remain.
+  Security. Deployment-boundary evidence and Security Headers Inspector
+  verification remain.
 - Added a provider boundary and hCaptcha widget for CAPTCHA verification on
   registration and login,
   with external secret configuration and explicit failure responses when enabled.
