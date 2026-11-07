@@ -338,9 +338,11 @@ decision log before implementation continues.
   (override with `LOGGING_FILE_NAME`).
 - Hosting follows the rubric minimum: GitHub Pages publishes the static frontend
   (`pages.yml`), and the full stack is demonstrated locally behind Apache
-  (`infra/apache`, `docker compose --profile demo`). Apache applies `.htaccess`
-  resource protection and security headers and proxies `/api` to Spring Boot on the
-  same origin. Verified locally: security headers present, protected paths return
+  in Docker Compose: PostgreSQL, the Spring Boot backend (`backend/Dockerfile`),
+  and Apache (`infra/apache`), which builds the frontend, applies `.htaccess`
+  resource protection and security headers, and proxies `/api` to the backend on
+  the same origin. The backend is not published on the host, and it takes the
+  client IP from Apache's `X-Forwarded-For` for rate limiting. Verified locally: security headers present, protected paths return
   403, and registration, login, session, CSRF, and 403 authorization work through
   the proxy.
 - Audit log lines now include the actor and resource, and order creation and

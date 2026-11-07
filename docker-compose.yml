@@ -1,3 +1,5 @@
+# Full local stack:  docker compose up -d --build   → http://localhost:8081
+# Database only (backend run from the IDE):  docker compose up -d postgres
 services:
   postgres:
     image: postgres:16-alpine
@@ -6,7 +8,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-fragrance_app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      # Host port for DBeaver and IDE runs; 5433 avoids a local PostgreSQL on 5432.
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -15,17 +18,39 @@ services:
       timeout: 5s
       retries: 10
 
-  # Demo web server: `npm run build:demo` in frontend/, then
-  # `docker compose --profile demo up -d`. Open http://localhost:8081.
+  backend:
+    build: ./backend
+    # Secrets (Stripe, hCaptcha, database password) are read from .env at runtime
+    # and never baked into the image.
+    env_file: .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fragrance_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-fragrance_app}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+      # Apache is the only way in, so trust its X-Forwarded-For for the client IP
+      # (rate limiting and logs see the browser, not the proxy).
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Keep the application/audit log readable on the host.
+      - ./backend/logs:/app/logs
+    # Not published on the host: the API is reached through Apache at /api.
+    expose:
+      - "8080"
+
   web:
-    profiles: ["demo"]
-    build: ./infra/apache
+    build:
+      context: .
+      dockerfile: infra/apache/Dockerfile
+      args:
+        # Public hCaptcha site key from .env (not a secret).
+        VITE_CAPTCHA_SITE_KEY: ${VITE_CAPTCHA_SITE_KEY:-}
     ports:
       - "8081:80"
-    volumes:
-      - ./frontend/dist:/usr/local/apache2/htdocs:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    depends_on:
+      - backend
 
 volumes:
   postgres-data:

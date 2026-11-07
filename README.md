@@ -8,11 +8,37 @@ must not be used to process real payments or store real payment card data.
 
 ## Prerequisites
 
-- Java 21
-- Node.js 22 and npm
-- Docker Desktop with Docker Compose
+- Docker Desktop with Docker Compose (enough to run the whole stack)
+- Java 21 and Node.js 22 with npm (only for development outside Docker)
 
-## Local setup
+## Run everything in Docker
+
+1. Copy `.env.example` to `.env` and enter your local values.
+2. Build and start PostgreSQL, the backend, and Apache:
+
+   ```text
+   docker compose up -d --build
+   ```
+
+3. Open <http://localhost:8081>. The first start creates the schema and demo data.
+
+| Service | Container | Reachable from the host |
+| --- | --- | --- |
+| Apache (frontend + `/api` proxy) | `web` | <http://localhost:8081> |
+| Spring Boot API | `backend` | Only through Apache at `/api` |
+| PostgreSQL 16 | `postgres` | `localhost:5433` (DBeaver) |
+
+- Logs: `docker compose logs -f backend`, or the log file `backend/logs/fragrance-backend.log`.
+- After code changes: `docker compose up -d --build`.
+- Stop: `docker compose down` (keeps the data).
+
+The backend reads secrets from `.env` at runtime; they are not built into the
+images. The hCaptcha *site key* is public and is built into the frontend bundle,
+so rebuild with `--build` after changing it.
+
+## Local development setup
+
+Use this to run the backend from the IDE and the frontend with hot reload.
 
 1. Copy `.env.example` to `.env` and enter your local values. The root `.env` is
    ignored by Git, loaded automatically by Docker Compose, and imported by the
@@ -47,9 +73,32 @@ and generates `robots.txt` and `sitemap.xml` from it. The `build:demo` and
 `build:pages` scripts take their values from the committed, non-secret
 `.env.demo` and `.env.pages` files.
 
+## Database
+
+- PostgreSQL 16 runs in Docker and is published on **host port 5433**
+  (`POSTGRES_PORT`), so it does not clash with a locally installed PostgreSQL on
+  5432.
+- Flyway creates the schema from `backend/src/main/resources/db/migration` the
+  first time the backend starts. It then applies the demo seed in
+  `backend/src/main/resources/db/demo`: the accounts below, three brands, three
+  categories, and six products. Set `FLYWAY_LOCATIONS=classpath:db/migration` to
+  skip the seed.
+- Data lives in the named Docker volume `fragrance-ecommerce_postgres-data` and
+  survives restarts and `docker compose down`. Flyway records applied migrations,
+  so nothing is re-run or overwritten. `docker compose down -v` deletes the volume;
+  the next backend start recreates the schema and demo data from scratch.
+- The database password is `POSTGRES_PASSWORD` in `.env`. PostgreSQL reads it
+  only when the volume is first created, so after changing it run
+  `docker compose down -v` (this deletes the data).
+
+To inspect the data model in DBeaver: **New connection → PostgreSQL**, host
+`localhost`, port `5433`, database `fragrance_db`, user `fragrance_app`, password
+from `POSTGRES_PASSWORD`. Then right-click **fragrance_db → Schemas → public →
+View Diagram** to show the tables and their foreign keys.
+
 ## Local demo accounts
 
-These are fake accounts for local testing only:
+These fake accounts are created by the demo seed for local testing only:
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -73,11 +122,12 @@ For Stripe webhooks, run the Stripe CLI in a separate terminal:
 ```text
 stripe listen `
   --events checkout.session.completed,checkout.session.async_payment_failed,checkout.session.expired `
-  --forward-to http://localhost:8080/api/v1/webhooks/stripe
+  --forward-to http://localhost:8081/api/v1/webhooks/stripe
 ```
 
+Use `http://localhost:8080/...` instead when the backend runs from the IDE.
 Copy the `whsec_...` secret printed by the CLI into `STRIPE_WEBHOOK_SECRET` in
-`.env`, then restart the backend.
+`.env`, then restart the backend (`docker compose up -d backend`).
 
 ## Hosting and demonstration
 
@@ -90,30 +140,22 @@ The project uses two free setups:
   and the Lighthouse SEO audit. One-time setup: in the repository, set
   **Settings → Pages → Source** to **GitHub Actions**, and add the public hCaptcha
   site key as the repository variable `VITE_CAPTCHA_SITE_KEY`.
-- **Live demo (Apache on your machine):** Apache serves the built frontend, applies
-  `frontend/public/.htaccess`, and proxies `/api` to Spring Boot, so the browser
-  sees a single origin at <http://localhost:8081>.
+- **Live demo (Docker on your machine):** Apache serves the built frontend, applies
+  `frontend/public/.htaccess`, and proxies `/api` to the backend container, so the
+  browser sees a single origin at <http://localhost:8081>.
 
 ### Demo-day checklist
 
-1. Start PostgreSQL and the backend as described in [Local setup](#local-setup).
-   For checkout, set these in `.env` before starting the backend:
+1. For checkout, make sure `.env` contains:
 
    ```text
    STRIPE_SUCCESS_URL=http://localhost:8081/#/checkout/success
    STRIPE_CANCEL_URL=http://localhost:8081/#/checkout/cancel
    ```
 
-2. Build the demo frontend and start Apache:
-
-   ```text
-   cd frontend
-   npm run build:demo
-   cd ..
-   docker compose --profile demo up -d --build web
-   ```
-
-3. Start `stripe listen` (see above) and open <http://localhost:8081>.
+2. Start the stack: `docker compose up -d --build`.
+3. Start `stripe listen` (see above, forwarding to port 8081).
+4. Open <http://localhost:8081>, and DBeaver on `localhost:5433` for the data model.
 
 | Rubric criterion | How to show it |
 | --- | --- |

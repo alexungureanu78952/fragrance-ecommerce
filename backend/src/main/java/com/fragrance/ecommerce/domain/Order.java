@@ -1,5 +1,7 @@
 package com.fragrance.ecommerce.domain;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +31,7 @@ public class Order {
     @Column(nullable = false, length = 30)
     private OrderStatus status;
     @Column(nullable = false, length = 3)
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String currency;
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;

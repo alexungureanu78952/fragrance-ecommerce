@@ -1,0 +1,10 @@
+# Build context for infra/apache/Dockerfile (repository root).
+**/node_modules
+**/dist
+**/test-results
+backend/
+.git
+.env
+.env.local
+*.log
+*.pdf
