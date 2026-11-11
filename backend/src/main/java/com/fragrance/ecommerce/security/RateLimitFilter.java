@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -18,6 +21,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final int requestLimit;
     private final Duration window;
     private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "rate-limit-cleaner");
+        t.setDaemon(true);
+        return t;
+    });
 
     public RateLimitFilter(
         @Value("${app.rate-limit.max-requests:100}") int requestLimit,
@@ -27,6 +35,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
         this.requestLimit = requestLimit;
         this.window = Duration.ofSeconds(windowSeconds);
+        cleaner.scheduleAtFixedRate(this::evictExpired, windowSeconds, windowSeconds, TimeUnit.SECONDS);
+    }
+
+    private void evictExpired() {
+        var now = Instant.now();
+        windows.entrySet().removeIf(e -> now.isAfter(e.getValue().startedAt().plus(window)));
     }
 
     @Override
