@@ -34,8 +34,6 @@ public class Order {
     @JdbcTypeCode(SqlTypes.CHAR)
     private String currency;
     @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal subtotal;
-    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal total;
     @Column(name = "idempotency_key", nullable = false, unique = true, length = 120)
     private String idempotencyKey;
@@ -54,7 +52,6 @@ public class Order {
         this.customer = customer;
         this.status = OrderStatus.PENDING_PAYMENT;
         this.currency = "EUR";
-        this.subtotal = total;
         this.total = total;
         this.idempotencyKey = idempotencyKey;
         this.createdAt = Instant.now();
